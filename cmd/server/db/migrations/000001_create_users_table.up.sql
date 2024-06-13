@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS public.users
 (
-    id numeric NOT NULL,
+    id serial NOT NULL,
     login character varying COLLATE pg_catalog."default" NOT NULL,
     password character varying(64) COLLATE pg_catalog."default" NOT NULL,
     registered_at timestamp with time zone NOT NULL,
@@ -16,7 +16,7 @@ ALTER TABLE IF EXISTS public.users
 
 CREATE TABLE IF NOT EXISTS public.store
 (
-    id numeric NOT NULL,
+    id serial NOT NULL,
     user_id bigint NOT NULL,
     uuid character varying COLLATE pg_catalog."default" NOT NULL,
     login character varying COLLATE pg_catalog."default",

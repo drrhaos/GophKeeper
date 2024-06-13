@@ -4,6 +4,7 @@ import (
 	"gophkeeper/internal/logger"
 	"gophkeeper/internal/server/configure"
 	"gophkeeper/internal/server/grpcmode"
+	"gophkeeper/internal/server/restmode"
 )
 
 func main() {
@@ -13,5 +14,6 @@ func main() {
 		logger.Log.Panic("Error read config")
 	}
 
-	grpcmode.Run(cfg)
+	go grpcmode.Run(cfg)
+	restmode.Run(cfg)
 }

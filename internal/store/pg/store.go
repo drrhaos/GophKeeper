@@ -84,7 +84,7 @@ func (db *Database) UserRegister(ctx context.Context, login string, password str
 	}
 
 	_, err = db.Conn.Exec(ctx,
-		`INSERT INTO users (login, password, registered_at) VALUES ($1, $2, $3)`, login, string(hashedPassword), time.Now())
+		`INSERT INTO users (login, password, registered_at, last_time) VALUES ($1, $2, $3, $4)`, login, string(hashedPassword), time.Now(), time.Now())
 	if err != nil {
 		logger.Log.Warn("Не удалось добавить пользователя ", zap.Error(err))
 		return err
@@ -110,6 +110,13 @@ func (db *Database) UserLogin(ctx context.Context, login string, password string
 	if err != nil {
 		return store.ErrAuthentication
 	}
+
+	_, err = db.Conn.Exec(ctx, `UPDATE users SET last_time = $1 WHERE login = $2`, time.Now(), login)
+	if err != nil {
+		logger.Log.Warn("Не удалось обновить значение", zap.Error(err))
+		return err
+	}
+
 	return nil
 }
 

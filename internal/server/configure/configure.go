@@ -15,20 +15,26 @@ import (
 type Config struct {
 	Address     string `env:"ADDRESS" json:"address,omitempty"`           // адрес сервера
 	DatabaseDsn string `env:"DATABASE_DSN" json:"database_dsn,omitempty"` // DSN базы данных
+	SecretKey   string `env:"SECRET_KEY" json:"secret_key,omitempty"`     // DSN базы данных
 }
 
 func (cfg *Config) readFlags() {
 	address := flag.String("a", "127.0.0.1:8080", "Сетевой адрес host:port")
 	databaseDsn := flag.String("d", "",
 		"Сетевой адрес базя данных postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable")
+	secretKey := flag.String("k", "test", "Сетевой адрес host:port")
 	flag.Parse()
 
-	if *address != "" {
+	if cfg.Address == "" {
 		cfg.Address = *address
 	}
 
-	if *databaseDsn != "" {
+	if cfg.DatabaseDsn == "" {
 		cfg.DatabaseDsn = *databaseDsn
+	}
+
+	if cfg.SecretKey == "" {
+		cfg.SecretKey = *secretKey
 	}
 }
 

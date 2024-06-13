@@ -2,7 +2,34 @@ syntax = "proto3";
 
 package gophkeeper;
 
+import "google/api/annotations.proto";
+
 option go_package = "gophkeeper/pkg/proto";
+// option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+//     info: {
+//      title: "HelloService";
+//      version: "1.0";
+//      contact: {
+//       name: "grpc-with-rest";
+//       url: "https://github.com/your-username/hello";
+//        };
+//      };
+//      schemes: HTTP;
+//      consumes: "application/json";
+//      produces: "application/json";
+//      responses: {
+//      key: "404";
+//      value: {
+//       description: "Returned when the resource does not exist.";
+//       schema: {
+//        json_schema: {
+//         type: STRING;
+//        }
+//       }
+//      }
+//     }
+//    };
+
 
 message RegisterRequest  {
 	string login = 1;
@@ -22,7 +49,7 @@ message LoginRequest  {
 message LoginResponse {
     string token = 1;
     string error = 2;
-  }
+}
 
 message FieldKeep  {
     string uuid = 1;
@@ -48,7 +75,19 @@ message SyncResponse {
 }
 
 service GophKeeper {
-    rpc Register (RegisterRequest) returns (RegisterResponse);
-    rpc Login (LoginRequest) returns (LoginResponse);
+    rpc Register (RegisterRequest) returns (RegisterResponse)
+    {
+        option(google.api.http) = {
+         post: "/api/register"
+         body: "*"
+        };
+    };
+    rpc Login (LoginRequest) returns (LoginResponse)
+        {
+        option(google.api.http) = {
+         post: "/api/login"
+         body: "*"
+        };
+    };
     rpc SyncData (SyncRequest) returns (SyncResponse);
 }
