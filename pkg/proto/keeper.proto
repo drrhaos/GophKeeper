@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package gophkeeper;
+
+option go_package = "gophkeeper/pkg/proto";
+
+message RegisterRequest  {
+	string login = 1;
+    string password = 2;
+}
+
+message RegisterResponse {
+    string error = 1;
+  }
+
+message LoginRequest  {
+	string login = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string token = 1;
+    string error = 2;
+  }
+
+message FieldKeep  {
+    string uuid = 1;
+    string login = 2;
+    string password = 3;
+    string data = 4;
+    message Card {
+        string number = 1;
+        string cvc = 2;
+        string date = 3;
+        string owner = 4;
+    }
+    string dateUpdate = 5;
+}
+
+message SyncRequest {
+    string token = 1;
+    repeated FieldKeep data = 2;
+}
+
+message SyncResponse {
+    string token = 1;
+    repeated FieldKeep data = 2;
+}
+
+service GophKeeper {
+    rpc Register (RegisterRequest) returns (RegisterResponse);
+    rpc Login (LoginRequest) returns (LoginResponse);
+    rpc SyncData (SyncRequest) returns (SyncResponse);
+}
