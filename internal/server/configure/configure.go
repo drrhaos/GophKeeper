@@ -3,8 +3,9 @@ package configure
 
 import (
 	"flag"
-	"gophkeeper/internal/logger"
 	"net/url"
+
+	"gophkeeper/internal/logger"
 
 	"github.com/caarlos0/env"
 	"go.uber.org/zap"
@@ -12,16 +13,16 @@ import (
 
 // Config хранит текущую конфигурацию сервиса.
 type Config struct {
-	Address         string `env:"ADDRESS" json:"address,omitempty"`                               // адрес сервера
-	DatabaseDsn     string `env:"DATABASE_DSN" json:"database_dsn,omitempty"`                     // DSN базы данных
+	Address     string `env:"ADDRESS" json:"address,omitempty"`           // адрес сервера
+	DatabaseDsn string `env:"DATABASE_DSN" json:"database_dsn,omitempty"` // DSN базы данных
 }
 
 func (cfg *Config) readFlags() {
-	address := flag.String("a", "", "Сетевой адрес host:port")
+	address := flag.String("a", "127.0.0.1:8080", "Сетевой адрес host:port")
 	databaseDsn := flag.String("d", "",
 		"Сетевой адрес базя данных postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable")
 	flag.Parse()
-	
+
 	if *address != "" {
 		cfg.Address = *address
 	}

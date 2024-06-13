@@ -10,7 +10,8 @@ message RegisterRequest  {
 }
 
 message RegisterResponse {
-    string error = 1;
+    string token = 1;
+    string error = 2;
   }
 
 message LoginRequest  {
@@ -28,13 +29,12 @@ message FieldKeep  {
     string login = 2;
     string password = 3;
     string data = 4;
-    message Card {
-        string number = 1;
-        string cvc = 2;
-        string date = 3;
-        string owner = 4;
-    }
-    string dateUpdate = 5;
+    int64 timeUpdate = 5;
+    string cardNumber = 6;
+    string cardCVC = 7;
+    string cardDate = 8;
+    string cardOwner = 9;
+    
 }
 
 message SyncRequest {

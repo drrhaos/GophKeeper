@@ -9,7 +9,6 @@ import (
 )
 
 func TestRequestLogger(t *testing.T) {
-
 	tests := []struct {
 		name string
 		want bool
