@@ -1,0 +1,20 @@
+version: '3.1'
+
+services:
+  db:
+    image: postgres
+    hostname: db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - 5432:5432
+
+  pgadmin:
+    image: dpage/pgadmin4
+    hostname: pgadmin4
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - 80:80
