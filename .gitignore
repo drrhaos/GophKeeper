@@ -21,3 +21,4 @@ cmd/server/server
 # Go workspace file
 go.work
 go.work.sum
+.env

@@ -19,7 +19,7 @@ type StorageInterface interface {
 	UserLogin(ctx context.Context, login string, password string) error
 	AddField(ctx context.Context) bool
 	DelField(ctx context.Context) bool
-	SyncFields(ctx context.Context, user string, data []proto.FieldKeep) ([]proto.FieldKeep, error)
+	SyncFields(ctx context.Context, user string, data []*proto.FieldKeep) ([]*proto.FieldKeep, error)
 }
 
 // StorageContext содержит текущее хранилище.
@@ -53,6 +53,6 @@ func (sc *StorageContext) DelField(ctx context.Context) bool {
 }
 
 // SyncFields синхронизирует данные.
-func (sc *StorageContext) SyncFields(ctx context.Context, user string, data []proto.FieldKeep) ([]proto.FieldKeep, error) {
+func (sc *StorageContext) SyncFields(ctx context.Context, user string, data []*proto.FieldKeep) ([]*proto.FieldKeep, error) {
 	return sc.storage.SyncFields(ctx, user, data)
 }

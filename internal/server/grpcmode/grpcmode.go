@@ -4,6 +4,7 @@ package grpcmode
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"time"
@@ -20,6 +21,14 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
+
+
+type UserClaims struct {
+    jwt.StandardClaims
+    Username string
+}
+
+var ErrNotValidToken = errors.New("token not valid") // ErrNotValidToken токен не прошел проверку.
 
 // Run запускает сервер
 func Run(cfg configure.Config) {
@@ -113,21 +122,50 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb
 		return &response, err
 	}
 
-	claims := jwt.MapClaims{
-		"username": in.Login,
-	}
+	claims := &UserClaims{
+        Username: in.GetLogin(),
+        StandardClaims: jwt.StandardClaims{
+            ExpiresAt: time.Now().Add(time.Hour * 3).Unix(),
+        },
+    }
 
-	jwtauth.SetExpiry(claims, time.Now().Add(time.Minute*5))
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	response.Token, err = token.SignedString([]byte(ms.cfg.SecretKey))
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    response.Token, err = token.SignedString([]byte(ms.cfg.SecretKey))
+	
 	if err != nil {
 		logger.Log.Warn("Ошибка создания токена:", zap.Error(err))
 		return &response, err
 	}
 
 	logger.Log.Info("Пользователь аутентифицирован")
+
+	return &response, nil
+}
+
+// SyncData синхронизация данных.
+func (ms *GophKeeperServer) SyncData(ctx context.Context, in *pb.SyncRequest) (*pb.SyncResponse, error) {
+	var response pb.SyncResponse
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	
+    claims := &UserClaims{}
+    parsedToken, err := jwt.ParseWithClaims(in.GetToken(), claims,
+    func(t *jwt.Token) (interface{}, error) {
+        if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+            return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+        }
+        return []byte(ms.cfg.SecretKey), nil
+    })
+	
+	if err != nil || !parsedToken.Valid {
+		logger.Log.Warn("Недействительный JWT-токен")
+		return &response, ErrNotValidToken
+	}
+
+	ms.storage.SyncFields(ctx, claims.Username, in.GetData())
+
+	logger.Log.Info("Данные синхронизированны")
 
 	return &response, nil
 }

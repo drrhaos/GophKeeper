@@ -58,7 +58,7 @@ message FieldKeep  {
     string data = 4;
     int64 timeUpdate = 5;
     string cardNumber = 6;
-    string cardCVC = 7;
+    int64 cardCVC = 7;
     string cardDate = 8;
     string cardOwner = 9;
     
@@ -83,11 +83,17 @@ service GophKeeper {
         };
     };
     rpc Login (LoginRequest) returns (LoginResponse)
-        {
+    {
         option(google.api.http) = {
          post: "/api/login"
          body: "*"
         };
     };
-    rpc SyncData (SyncRequest) returns (SyncResponse);
+    rpc SyncData (SyncRequest) returns (SyncResponse)
+    {
+        option(google.api.http) = {
+            post: "/api/sync"
+            body: "*"
+        };
+    };
 }

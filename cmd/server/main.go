@@ -7,7 +7,14 @@ import (
 	"gophkeeper/internal/server/restmode"
 )
 
+const flagLogLevel = "info"
+
 func main() {
+	err := logger.Initialize(flagLogLevel)
+	if err != nil {
+		panic(err)
+	}
+
 	var cfg configure.Config
 	ok := cfg.ReadConfig()
 	if !ok {

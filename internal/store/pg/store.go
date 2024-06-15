@@ -4,7 +4,6 @@ package pg
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"gophkeeper/internal/logger"
@@ -56,7 +55,6 @@ func Migrations(uri string) {
 	}
 	err = m.Up()
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		fmt.Println(err)
 		logger.Log.Panic("Не удалось выполнить миграцию", zap.Error(err))
 	}
 	logger.Log.Info("Миграции успешно применены")
@@ -131,7 +129,7 @@ func (db *Database) DelField(ctx context.Context) bool {
 }
 
 // SyncFields синхронизирует данные.
-func (db *Database) SyncFields(ctx context.Context, user string, data []proto.FieldKeep) (remoteData []proto.FieldKeep, err error) {
+func (db *Database) SyncFields(ctx context.Context, user string, data []*proto.FieldKeep) (remoteData []*proto.FieldKeep, err error) {
 	var idUser int
 	err = db.Conn.QueryRow(ctx, `SELECT id FROM users WHERE login = $1`, user).Scan(&idUser)
 	if err != nil && err != pgx.ErrNoRows {
@@ -139,7 +137,7 @@ func (db *Database) SyncFields(ctx context.Context, user string, data []proto.Fi
 		return remoteData, err
 	}
 
-	rows, err := db.Conn.Query(ctx, `SELECT uuid, update_at FROM store WHERE AND user_id <> $1`, idUser)
+	rows, err := db.Conn.Query(ctx, `SELECT uuid, update_at FROM store WHERE user_id = $1`, idUser)
 	defer rows.Close()
 
 	checkUpdate := make(map[string]time.Time)
@@ -160,20 +158,26 @@ func (db *Database) SyncFields(ctx context.Context, user string, data []proto.Fi
 
 		if !ok {
 			_, err = db.Conn.Exec(ctx,
-				`INSERT INTO store (user_id, uuid, login, password, data, card_number, card_cvc, card_date, card_owner, update_at) 
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+				`INSERT INTO store (user_id, uuid, update_at) 
+				VALUES ($1, $2, $3)`,
 				idUser,
 				curData.GetUuid(),
-				curData.GetLogin(),
-				curData.GetPassword(),
-				curData.GetData(),
-				curData.GetCardNumber(),
-				curData.GetCardCVC(),
-				curData.GetCardDate(),
-				curData.GetCardOwner(),
 				time.Now())
+			// _, err = db.Conn.Exec(ctx,
+			// 	`INSERT INTO store (user_id, uuid, login, password, data, card_number, card_cvc, card_date, card_owner, update_at) 
+			// 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			// 	idUser,
+			// 	curData.GetUuid(),
+			// 	curData.GetLogin(),
+			// 	curData.GetPassword(),
+			// 	curData.GetData(),
+			// 	curData.GetCardNumber(),
+			// 	curData.GetCardCVC(),
+			// 	curData.GetCardDate(),
+			// 	curData.GetCardOwner(),
+			// 	time.Now())
 			if err != nil {
-				logger.Log.Warn("Не удалось добавить запись ", zap.Error(err))
+				logger.Log.Warn("Не удалось добавить запись", zap.Error(err))
 				return data, err
 			}
 			logger.Log.Info("Добавлена новая запись")
