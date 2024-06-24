@@ -1,0 +1,417 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "GophKeeper",
+    "version": "1.0",
+    "contact": {
+      "name": "GophKeeper",
+      "url": "https://github.com/drrhaos/gophkeeper"
+    }
+  },
+  "tags": [
+    {
+      "name": "GophKeeper"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/add": {
+      "post": {
+        "operationId": "GophKeeper_AddField",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gophkeeperAddFieldKeepResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/gophkeeperAddFieldKeepRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GophKeeper"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/delete/{uuid}": {
+      "delete": {
+        "operationId": "GophKeeper_DelField",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gophkeeperDeleteFieldKeepResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GophKeeper"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/edit": {
+      "put": {
+        "operationId": "GophKeeper_EditField",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gophkeeperEditFieldKeepResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/gophkeeperEditFieldKeepRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GophKeeper"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/list": {
+      "post": {
+        "operationId": "GophKeeper_ListFields",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gophkeeperListFielsdKeepResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/gophkeeperListFieldsKeepRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GophKeeper"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/login": {
+      "post": {
+        "operationId": "GophKeeper_Login",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gophkeeperLoginResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/gophkeeperLoginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GophKeeper"
+        ]
+      }
+    },
+    "/api/register": {
+      "post": {
+        "operationId": "GophKeeper_Register",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gophkeeperRegisterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/gophkeeperRegisterRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GophKeeper"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "gophkeeperAddFieldKeepRequest": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/gophkeeperFieldKeep"
+        }
+      }
+    },
+    "gophkeeperAddFieldKeepResponse": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "gophkeeperDeleteFieldKeepResponse": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "gophkeeperEditFieldKeepRequest": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/definitions/gophkeeperFieldKeep"
+        }
+      }
+    },
+    "gophkeeperEditFieldKeepResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/gophkeeperFieldKeep"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "gophkeeperFieldKeep": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "login": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "timeUpdate": {
+          "type": "string"
+        },
+        "cardNumber": {
+          "type": "string"
+        },
+        "cardCVC": {
+          "type": "string"
+        },
+        "cardDate": {
+          "type": "string"
+        },
+        "cardOwner": {
+          "type": "string"
+        }
+      }
+    },
+    "gophkeeperListFieldsKeepRequest": {
+      "type": "object"
+    },
+    "gophkeeperListFielsdKeepResponse": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "gophkeeperLoginRequest": {
+      "type": "object",
+      "properties": {
+        "login": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "gophkeeperLoginResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "gophkeeperRegisterRequest": {
+      "type": "object",
+      "properties": {
+        "login": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "gophkeeperRegisterResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "description": "Type Bearer followed by a space and JWT token.",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}

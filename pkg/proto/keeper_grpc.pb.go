@@ -2,12 +2,13 @@
 // versions:
 // - protoc-gen-go-grpc v1.4.0
 // - protoc             v4.25.3
-// source: pkg/proto/keeper.proto
+// source: keeper.proto
 
 package proto
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,9 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	GophKeeper_Register_FullMethodName = "/gophkeeper.GophKeeper/Register"
-	GophKeeper_Login_FullMethodName    = "/gophkeeper.GophKeeper/Login"
-	GophKeeper_SyncData_FullMethodName = "/gophkeeper.GophKeeper/SyncData"
+	GophKeeper_Register_FullMethodName   = "/gophkeeper.GophKeeper/Register"
+	GophKeeper_Login_FullMethodName      = "/gophkeeper.GophKeeper/Login"
+	GophKeeper_AddField_FullMethodName   = "/gophkeeper.GophKeeper/AddField"
+	GophKeeper_EditField_FullMethodName  = "/gophkeeper.GophKeeper/EditField"
+	GophKeeper_DelField_FullMethodName   = "/gophkeeper.GophKeeper/DelField"
+	GophKeeper_ListFields_FullMethodName = "/gophkeeper.GophKeeper/ListFields"
 )
 
 // GophKeeperClient is the client API for GophKeeper service.
@@ -30,7 +34,10 @@ const (
 type GophKeeperClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	SyncData(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error)
+	AddField(ctx context.Context, in *AddFieldKeepRequest, opts ...grpc.CallOption) (*AddFieldKeepResponse, error)
+	EditField(ctx context.Context, in *EditFieldKeepRequest, opts ...grpc.CallOption) (*EditFieldKeepResponse, error)
+	DelField(ctx context.Context, in *DeleteFieldKeepRequest, opts ...grpc.CallOption) (*DeleteFieldKeepResponse, error)
+	ListFields(ctx context.Context, in *ListFieldsKeepRequest, opts ...grpc.CallOption) (*ListFielsdKeepResponse, error)
 }
 
 type gophKeeperClient struct {
@@ -61,10 +68,40 @@ func (c *gophKeeperClient) Login(ctx context.Context, in *LoginRequest, opts ...
 	return out, nil
 }
 
-func (c *gophKeeperClient) SyncData(ctx context.Context, in *SyncRequest, opts ...grpc.CallOption) (*SyncResponse, error) {
+func (c *gophKeeperClient) AddField(ctx context.Context, in *AddFieldKeepRequest, opts ...grpc.CallOption) (*AddFieldKeepResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SyncResponse)
-	err := c.cc.Invoke(ctx, GophKeeper_SyncData_FullMethodName, in, out, cOpts...)
+	out := new(AddFieldKeepResponse)
+	err := c.cc.Invoke(ctx, GophKeeper_AddField_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gophKeeperClient) EditField(ctx context.Context, in *EditFieldKeepRequest, opts ...grpc.CallOption) (*EditFieldKeepResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EditFieldKeepResponse)
+	err := c.cc.Invoke(ctx, GophKeeper_EditField_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gophKeeperClient) DelField(ctx context.Context, in *DeleteFieldKeepRequest, opts ...grpc.CallOption) (*DeleteFieldKeepResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteFieldKeepResponse)
+	err := c.cc.Invoke(ctx, GophKeeper_DelField_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gophKeeperClient) ListFields(ctx context.Context, in *ListFieldsKeepRequest, opts ...grpc.CallOption) (*ListFielsdKeepResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListFielsdKeepResponse)
+	err := c.cc.Invoke(ctx, GophKeeper_ListFields_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +114,10 @@ func (c *gophKeeperClient) SyncData(ctx context.Context, in *SyncRequest, opts .
 type GophKeeperServer interface {
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
-	SyncData(context.Context, *SyncRequest) (*SyncResponse, error)
+	AddField(context.Context, *AddFieldKeepRequest) (*AddFieldKeepResponse, error)
+	EditField(context.Context, *EditFieldKeepRequest) (*EditFieldKeepResponse, error)
+	DelField(context.Context, *DeleteFieldKeepRequest) (*DeleteFieldKeepResponse, error)
+	ListFields(context.Context, *ListFieldsKeepRequest) (*ListFielsdKeepResponse, error)
 	mustEmbedUnimplementedGophKeeperServer()
 }
 
@@ -91,8 +131,17 @@ func (UnimplementedGophKeeperServer) Register(context.Context, *RegisterRequest)
 func (UnimplementedGophKeeperServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedGophKeeperServer) SyncData(context.Context, *SyncRequest) (*SyncResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SyncData not implemented")
+func (UnimplementedGophKeeperServer) AddField(context.Context, *AddFieldKeepRequest) (*AddFieldKeepResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddField not implemented")
+}
+func (UnimplementedGophKeeperServer) EditField(context.Context, *EditFieldKeepRequest) (*EditFieldKeepResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditField not implemented")
+}
+func (UnimplementedGophKeeperServer) DelField(context.Context, *DeleteFieldKeepRequest) (*DeleteFieldKeepResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DelField not implemented")
+}
+func (UnimplementedGophKeeperServer) ListFields(context.Context, *ListFieldsKeepRequest) (*ListFielsdKeepResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFields not implemented")
 }
 func (UnimplementedGophKeeperServer) mustEmbedUnimplementedGophKeeperServer() {}
 
@@ -143,20 +192,74 @@ func _GophKeeper_Login_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GophKeeper_SyncData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SyncRequest)
+func _GophKeeper_AddField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddFieldKeepRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GophKeeperServer).SyncData(ctx, in)
+		return srv.(GophKeeperServer).AddField(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GophKeeper_SyncData_FullMethodName,
+		FullMethod: GophKeeper_AddField_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GophKeeperServer).SyncData(ctx, req.(*SyncRequest))
+		return srv.(GophKeeperServer).AddField(ctx, req.(*AddFieldKeepRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GophKeeper_EditField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EditFieldKeepRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophKeeperServer).EditField(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GophKeeper_EditField_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophKeeperServer).EditField(ctx, req.(*EditFieldKeepRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GophKeeper_DelField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteFieldKeepRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophKeeperServer).DelField(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GophKeeper_DelField_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophKeeperServer).DelField(ctx, req.(*DeleteFieldKeepRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GophKeeper_ListFields_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFieldsKeepRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GophKeeperServer).ListFields(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GophKeeper_ListFields_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GophKeeperServer).ListFields(ctx, req.(*ListFieldsKeepRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -177,10 +280,22 @@ var GophKeeper_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GophKeeper_Login_Handler,
 		},
 		{
-			MethodName: "SyncData",
-			Handler:    _GophKeeper_SyncData_Handler,
+			MethodName: "AddField",
+			Handler:    _GophKeeper_AddField_Handler,
+		},
+		{
+			MethodName: "EditField",
+			Handler:    _GophKeeper_EditField_Handler,
+		},
+		{
+			MethodName: "DelField",
+			Handler:    _GophKeeper_DelField_Handler,
+		},
+		{
+			MethodName: "ListFields",
+			Handler:    _GophKeeper_ListFields_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pkg/proto/keeper.proto",
+	Metadata: "keeper.proto",
 }

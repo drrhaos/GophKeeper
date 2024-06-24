@@ -20,15 +20,19 @@ import (
 	"github.com/go-chi/jwtauth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
-
+// UserClaims JWT структура
 type UserClaims struct {
-    jwt.StandardClaims
-    Username string
+	jwt.StandardClaims
+	Username string
 }
 
-var ErrNotValidToken = errors.New("token not valid") // ErrNotValidToken токен не прошел проверку.
+var (
+	ErrNotValidToken = errors.New("token not valid") // ErrNotValidToken токен не прошел проверку.
+	ErrNotValidData  = errors.New("data not valid")  // ErrNotValidData не верный формат данных.
+)
 
 // Run запускает сервер
 func Run(cfg configure.Config) {
@@ -92,11 +96,20 @@ func (ms *GophKeeperServer) Register(ctx context.Context, in *pb.RegisterRequest
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	response.Token, err = token.SignedString([]byte(ms.cfg.SecretKey))
+	tokenString, err := token.SignedString([]byte(ms.cfg.SecretKey))
 	if err != nil {
 		logger.Log.Warn("Ошибка создания токена:", zap.Error(err))
 		return &response, err
 	}
+
+	response.Token = tokenString
+
+	if err != nil {
+		logger.Log.Warn("Ошибка создания токена:", zap.Error(err))
+		return &response, err
+	}
+
+	logger.Log.Info("Пользователь аутентифицирован")
 
 	logger.Log.Info("Новый пользователь зарегистрирован и атентифицирован")
 
@@ -123,15 +136,14 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb
 	}
 
 	claims := &UserClaims{
-        Username: in.GetLogin(),
-        StandardClaims: jwt.StandardClaims{
-            ExpiresAt: time.Now().Add(time.Hour * 3).Unix(),
-        },
-    }
+		Username: in.GetLogin(),
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 3).Unix(),
+		},
+	}
 
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    response.Token, err = token.SignedString([]byte(ms.cfg.SecretKey))
-	
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	response.Token, err = token.SignedString([]byte(ms.cfg.SecretKey))
 	if err != nil {
 		logger.Log.Warn("Ошибка создания токена:", zap.Error(err))
 		return &response, err
@@ -142,30 +154,138 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb
 	return &response, nil
 }
 
-// SyncData синхронизация данных.
-func (ms *GophKeeperServer) SyncData(ctx context.Context, in *pb.SyncRequest) (*pb.SyncResponse, error) {
-	var response pb.SyncResponse
+// AddField добавдяет запись в хранилище.
+func (ms *GophKeeperServer) AddField(ctx context.Context, in *pb.AddFieldKeepRequest) (*pb.AddFieldKeepResponse, error) {
+	var response pb.AddFieldKeepResponse
+	var token string
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	
-    claims := &UserClaims{}
-    parsedToken, err := jwt.ParseWithClaims(in.GetToken(), claims,
-    func(t *jwt.Token) (interface{}, error) {
-        if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-            return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-        }
-        return []byte(ms.cfg.SecretKey), nil
-    })
-	
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		values := md.Get("Authorization")
+		if len(values) > 0 {
+			token = values[0]
+		}
+	}
+
+	claims := &UserClaims{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims,
+		func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+			}
+			return []byte(ms.cfg.SecretKey), nil
+		})
+
+	if err != nil || !parsedToken.Valid {
+		logger.Log.Warn("Недействительный JWT-токен")
+		return &response, ErrNotValidToken
+	}
+	uuid, ok := ms.storage.AddField(ctx, claims.Username, in.GetData())
+	if !ok {
+		return &response, ErrNotValidData
+	}
+	response.Uuid = uuid
+	logger.Log.Info("Данные добавлены")
+
+	return &response, nil
+}
+
+// EditField изменяет запись в хранилище.
+func (ms *GophKeeperServer) EditField(ctx context.Context, in *pb.EditFieldKeepRequest) (*pb.EditFieldKeepResponse, error) {
+	var response pb.EditFieldKeepResponse
+	var token string
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		values := md.Get("Authorization")
+		if len(values) > 0 {
+			token = values[0]
+		}
+	}
+
+	claims := &UserClaims{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims,
+		func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+			}
+			return []byte(ms.cfg.SecretKey), nil
+		})
+
+	if err != nil || !parsedToken.Valid {
+		logger.Log.Warn("Недействительный JWT-токен")
+		return &response, ErrNotValidToken
+	}
+	response.Data, ok = ms.storage.EditField(ctx, claims.Username, in.GetUuid(), in.GetData())
+	if !ok {
+		return &response, ErrNotValidData
+	}
+	logger.Log.Info("Данные изменены")
+
+	return &response, nil
+}
+
+// DelField удаляет запись из хранилища.
+func (ms *GophKeeperServer) DelField(ctx context.Context, in *pb.DeleteFieldKeepRequest) (*pb.DeleteFieldKeepResponse, error) {
+	var response pb.DeleteFieldKeepResponse
+	var token string
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		values := md.Get("Authorization")
+		if len(values) > 0 {
+			token = values[0]
+		}
+	}
+
+	claims := &UserClaims{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims,
+		func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+			}
+			return []byte(ms.cfg.SecretKey), nil
+		})
+
 	if err != nil || !parsedToken.Valid {
 		logger.Log.Warn("Недействительный JWT-токен")
 		return &response, ErrNotValidToken
 	}
 
-	ms.storage.SyncFields(ctx, claims.Username, in.GetData())
-
-	logger.Log.Info("Данные синхронизированны")
+	uuid, ok := ms.storage.DelField(ctx, claims.Username, in.GetUuid())
+	if !ok {
+		return &response, ErrNotValidData
+	}
+	response.Uuid = uuid
+	logger.Log.Info("Запись удалена")
 
 	return &response, nil
 }
+
+// // SyncData синхронизация данных.
+// func (ms *GophKeeperServer) SyncData(ctx context.Context, in *pb.SyncRequest) (*pb.SyncResponse, error) {
+// 	var response pb.SyncResponse
+
+// 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+// 	defer cancel()
+
+// 	claims := &UserClaims{}
+// 	parsedToken, err := jwt.ParseWithClaims(in.GetToken(), claims,
+// 		func(t *jwt.Token) (interface{}, error) {
+// 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+// 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+// 			}
+// 			return []byte(ms.cfg.SecretKey), nil
+// 		})
+
+// 	if err != nil || !parsedToken.Valid {
+// 		logger.Log.Warn("Недействительный JWT-токен")
+// 		return &response, ErrNotValidToken
+// 	}
+
+// 	ms.storage.SyncFields(ctx, claims.Username, in.GetData())
+
+// 	logger.Log.Info("Данные синхронизированны")
+
+// 	return &response, nil
+// }

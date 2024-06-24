@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package gophkeeper;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+
+option go_package = "gophkeeper/pkg/proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+    info: {
+        title: "GophKeeper";
+        version: "1.0";
+        contact: {
+            name: "GophKeeper";
+            url: "https://github.com/drrhaos/gophkeeper";
+        };
+    };
+    security_definitions: {
+        security: {
+            key: "bearer"
+            value: {
+                type: TYPE_API_KEY;
+                description: "Type Bearer followed by a space and JWT token.";
+                name: "Authorization";
+                in: IN_HEADER;
+            };
+        };
+    };
+};
+
+
+message RegisterRequest  {
+	string login = 1;
+    string password = 2;
+}
+
+message RegisterResponse {
+    string token = 1;
+    string error = 2;
+  }
+
+message LoginRequest  {
+	string login = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string token = 1;
+    string error = 2;
+}
+
+message FieldKeep  {
+    string name = 1;
+    string login = 2;
+    string password = 3;
+    string data = 4;
+    string timeUpdate = 5;
+    string cardNumber = 6;
+    string cardCVC = 7;
+    string cardDate = 8;
+    string cardOwner = 9;
+    
+}
+
+message AddFieldKeepRequest {
+    FieldKeep data = 1;
+}
+
+message AddFieldKeepResponse {
+    string uuid = 1;
+    string error = 2;
+}
+
+message EditFieldKeepRequest {
+    string uuid = 1;
+    FieldKeep data = 2;
+}
+
+message EditFieldKeepResponse {
+    FieldKeep data = 1;
+    string error = 2;
+}
+
+message DeleteFieldKeepRequest {
+    string uuid = 1;
+}
+
+message DeleteFieldKeepResponse {
+    string uuid = 1;
+    string error = 2;
+}
+
+message ListFieldsKeepRequest {
+    
+}
+
+message ListFielsdKeepResponse {
+    repeated string uuid =1;
+    string error = 2;
+}
+
+service GophKeeper {
+    rpc Register (RegisterRequest) returns (RegisterResponse)
+    {
+        option(google.api.http) = {
+         post: "/api/register"
+         body: "*"
+        };
+    };
+    rpc Login (LoginRequest) returns (LoginResponse)
+    {
+        option(google.api.http) = {
+         post: "/api/login"
+         body: "*"
+        };
+    };
+    rpc AddField (AddFieldKeepRequest) returns (AddFieldKeepResponse)
+    {
+        option(google.api.http) = {
+            post: "/api/add"
+            body: "*"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            security: {
+                security_requirement: {
+                    key: "bearer"
+                };
+            };
+        };
+    };
+
+    rpc EditField (EditFieldKeepRequest) returns (EditFieldKeepResponse)
+    {
+        option(google.api.http) = {
+            put: "/api/edit"
+            body: "*"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            security: {
+                security_requirement: {
+                    key: "bearer"
+                };
+            };
+        };
+    };
+    rpc DelField (DeleteFieldKeepRequest) returns (DeleteFieldKeepResponse)
+    {
+        option(google.api.http) = {
+            delete: "/api/delete/{uuid}"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            security: {
+                security_requirement: {
+                    key: "bearer"
+                };
+            };
+        };
+    };
+    rpc ListFields (ListFieldsKeepRequest) returns (ListFielsdKeepResponse)
+    {
+        option(google.api.http) = {
+            post: "/api/list"
+            body: "*"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            security: {
+                security_requirement: {
+                    key: "bearer"
+                };
+            };
+        };
+    };
+}

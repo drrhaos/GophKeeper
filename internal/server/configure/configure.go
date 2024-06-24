@@ -13,13 +13,17 @@ import (
 
 // Config хранит текущую конфигурацию сервиса.
 type Config struct {
-	Address     string `env:"ADDRESS" json:"address,omitempty"`           // адрес сервера
+	Address     string `env:"ADDRESS" json:"address,omitempty"`           // адрес сервера grpc
+	AddressRest string `env:"ADDRESS_REST" json:"address_rest,omitempty"` // адрес сервера rest
+	StaticPath  string `env:"STATIC_PATH" json:"static_path,omitempty"`   // путь до статических файлов
 	DatabaseDsn string `env:"DATABASE_DSN" json:"database_dsn,omitempty"` // DSN базы данных
-	SecretKey   string `env:"SECRET_KEY" json:"secret_key,omitempty"`     // DSN базы данных
+	SecretKey   string `env:"SECRET_KEY" json:"secret_key,omitempty"`     // ключ шифрования
 }
 
 func (cfg *Config) readFlags() {
-	address := flag.String("a", "127.0.0.1:8080", "Сетевой адрес host:port")
+	address := flag.String("g", "127.0.0.1:8080", "Сетевой адрес grpc host:port")
+	addressRest := flag.String("r", "127.0.0.1:8081", "Сетевой адрес rest host:port")
+	staticPath := flag.String("s", "../../swagger-ui/", "Путь до файлов статики ")
 	databaseDsn := flag.String("d", "",
 		"Сетевой адрес базя данных postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable")
 	secretKey := flag.String("k", "test", "Сетевой адрес host:port")
@@ -27,6 +31,14 @@ func (cfg *Config) readFlags() {
 
 	if cfg.Address == "" {
 		cfg.Address = *address
+	}
+
+	if cfg.AddressRest == "" {
+		cfg.AddressRest = *addressRest
+	}
+
+	if cfg.StaticPath == "" {
+		cfg.StaticPath = *staticPath
 	}
 
 	if cfg.DatabaseDsn == "" {
@@ -51,6 +63,10 @@ func (cfg *Config) readEnv() error {
 func (cfg *Config) checkConfig() bool {
 	if cfg.Address == "" {
 		cfg.Address = "127.0.0.1:8080"
+	}
+
+	if cfg.AddressRest == "" {
+		cfg.AddressRest = "127.0.0.1:8081"
 	}
 
 	_, errURL := url.ParseRequestURI("http://" + cfg.Address)

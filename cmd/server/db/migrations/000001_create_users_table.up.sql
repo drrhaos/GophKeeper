@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS public.store
     password character varying COLLATE pg_catalog."default",
     data text COLLATE pg_catalog."default",
     card_number character varying COLLATE pg_catalog."default",
-    card_cvc integer,
-    card_date date,
+    card_cvc character varying COLLATE pg_catalog."default",
+    card_date character varying COLLATE pg_catalog."default",
     card_owner character varying COLLATE pg_catalog."default",
     CONSTRAINT store_pkey PRIMARY KEY (id),
     CONSTRAINT "user" FOREIGN KEY (user_id)

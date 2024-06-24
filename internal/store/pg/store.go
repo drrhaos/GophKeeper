@@ -13,6 +13,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
@@ -58,6 +59,16 @@ func Migrations(uri string) {
 		logger.Log.Panic("Не удалось выполнить миграцию", zap.Error(err))
 	}
 	logger.Log.Info("Миграции успешно применены")
+}
+
+func (db *Database) getUserID(ctx context.Context, user string) (idUser int, err error) {
+	err = db.Conn.QueryRow(ctx, `SELECT id FROM users WHERE login = $1`, user).Scan(&idUser)
+	if err != nil && err != pgx.ErrNoRows {
+		logger.Log.Warn("Ошибка выполнения запроса id", zap.Error(err))
+		return idUser, err
+	}
+
+	return idUser, err
 }
 
 // UserRegister добавляет нового пользоватяля в базу данных.
@@ -119,74 +130,90 @@ func (db *Database) UserLogin(ctx context.Context, login string, password string
 }
 
 // AddField добавляет данные.
-func (db *Database) AddField(ctx context.Context) bool {
-	return true
+func (db *Database) AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, bool) {
+	uuid := uuid.New().String()
+
+	idUser, err := db.getUserID(ctx, user)
+	if err != nil {
+		return "", false
+	}
+	_, err = db.Conn.Exec(ctx,
+		`INSERT INTO store (user_id, uuid, login, password, data, card_number, card_cvc, card_date, card_owner, update_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		idUser,
+		uuid,
+		data.GetLogin(),
+		data.GetPassword(),
+		data.GetData(),
+		data.GetCardNumber(),
+		data.GetCardCVC(),
+		data.GetCardDate(),
+		data.GetCardOwner(),
+		time.Now())
+	if err != nil {
+		logger.Log.Warn("Не удалось добавить запись", zap.Error(err))
+		return "", false
+	}
+	logger.Log.Info("Добавлена новая запись")
+
+	return uuid, true
+}
+
+// EditField добавляет данные.
+func (db *Database) EditField(ctx context.Context, user string, uuid string, data *proto.FieldKeep) (*proto.FieldKeep, bool) {
+	idUser, err := db.getUserID(ctx, user)
+	if err != nil {
+		return nil, false
+	}
+	_, err = db.Conn.Exec(ctx,
+		`UPDATE store 
+			SET
+				login=$1,
+				password=$2, 
+				data=$3,
+				card_number=$4,
+				card_cvc=$5,
+				card_date=$6,
+				card_owner=$7,
+				update_at=$8
+			WHERE 
+				user_id=$9 
+			AND
+				uuid=$10`,
+		data.GetLogin(),
+		data.GetPassword(),
+		data.GetData(),
+		data.GetCardNumber(),
+		data.GetCardCVC(),
+		data.GetCardDate(),
+		data.GetCardOwner(),
+		time.Now(),
+		idUser,
+		uuid)
+	if err != nil {
+		logger.Log.Warn("Не удалось изменить запись", zap.Error(err))
+		return nil, false
+	}
+	logger.Log.Info("Запись изменена")
+
+	return data, true
 }
 
 // DelField удаляет данные.
-func (db *Database) DelField(ctx context.Context) bool {
-	return true
-}
-
-// SyncFields синхронизирует данные.
-func (db *Database) SyncFields(ctx context.Context, user string, data []*proto.FieldKeep) (remoteData []*proto.FieldKeep, err error) {
-	var idUser int
-	err = db.Conn.QueryRow(ctx, `SELECT id FROM users WHERE login = $1`, user).Scan(&idUser)
-	if err != nil && err != pgx.ErrNoRows {
-		logger.Log.Warn("Ошибка выполнения запроса id", zap.Error(err))
-		return remoteData, err
+func (db *Database) DelField(ctx context.Context, user string, uuid string) (string, bool) {
+	idUser, err := db.getUserID(ctx, user)
+	if err != nil {
+		return "", false
 	}
-
-	rows, err := db.Conn.Query(ctx, `SELECT uuid, update_at FROM store WHERE user_id = $1`, idUser)
-	defer rows.Close()
-
-	checkUpdate := make(map[string]time.Time)
-	for rows.Next() {
-		var uuid string
-		var updateAt time.Time
-
-		err = rows.Scan(&uuid, &updateAt)
-		if err != nil {
-			logger.Log.Warn("Ошибка при сканировании строки:", zap.Error(err))
-			return remoteData, err
-		}
-		checkUpdate[uuid] = updateAt
+	_, err = db.Conn.Exec(ctx,
+		`DELETE FROM store WHERE user_id=$1 AND uuid=$2`,
+		idUser,
+		uuid)
+	if err != nil {
+		logger.Log.Warn("Не удалось удалить запись", zap.Error(err))
+		return "", false
 	}
+	logger.Log.Info("Запись удалена")
 
-	for _, curData := range data {
-		val, ok := checkUpdate[curData.GetUuid()]
-
-		if !ok {
-			_, err = db.Conn.Exec(ctx,
-				`INSERT INTO store (user_id, uuid, update_at) 
-				VALUES ($1, $2, $3)`,
-				idUser,
-				curData.GetUuid(),
-				time.Now())
-			// _, err = db.Conn.Exec(ctx,
-			// 	`INSERT INTO store (user_id, uuid, login, password, data, card_number, card_cvc, card_date, card_owner, update_at) 
-			// 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-			// 	idUser,
-			// 	curData.GetUuid(),
-			// 	curData.GetLogin(),
-			// 	curData.GetPassword(),
-			// 	curData.GetData(),
-			// 	curData.GetCardNumber(),
-			// 	curData.GetCardCVC(),
-			// 	curData.GetCardDate(),
-			// 	curData.GetCardOwner(),
-			// 	time.Now())
-			if err != nil {
-				logger.Log.Warn("Не удалось добавить запись", zap.Error(err))
-				return data, err
-			}
-			logger.Log.Info("Добавлена новая запись")
-		} else {
-			if val.Sub(time.Unix(curData.GetTimeUpdate(), 0)) > 0 {
-				// UPDATE
-			}
-		}
-	}
-
-	return data, err
+	return uuid, true
 }

@@ -17,9 +17,9 @@ var (
 type StorageInterface interface {
 	UserRegister(ctx context.Context, login string, password string) error
 	UserLogin(ctx context.Context, login string, password string) error
-	AddField(ctx context.Context) bool
-	DelField(ctx context.Context) bool
-	SyncFields(ctx context.Context, user string, data []*proto.FieldKeep) ([]*proto.FieldKeep, error)
+	AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, bool)
+	EditField(ctx context.Context, user string, uuid string, data *proto.FieldKeep) (*proto.FieldKeep, bool)
+	DelField(ctx context.Context, user string, uuid string) (string, bool)
 }
 
 // StorageContext содержит текущее хранилище.
@@ -43,16 +43,16 @@ func (sc *StorageContext) UserLogin(ctx context.Context, login string, password 
 }
 
 // AddField добавляет данные.
-func (sc *StorageContext) AddField(ctx context.Context) bool {
-	return sc.storage.AddField(ctx)
+func (sc *StorageContext) AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, bool) {
+	return sc.storage.AddField(ctx, user, data)
+}
+
+// EditField изменяте данные.
+func (sc *StorageContext) EditField(ctx context.Context, user string, uuid string, data *proto.FieldKeep) (*proto.FieldKeep, bool) {
+	return sc.storage.EditField(ctx, user, uuid, data)
 }
 
 // DelField удаляет данные.
-func (sc *StorageContext) DelField(ctx context.Context) bool {
-	return sc.storage.DelField(ctx)
-}
-
-// SyncFields синхронизирует данные.
-func (sc *StorageContext) SyncFields(ctx context.Context, user string, data []*proto.FieldKeep) ([]*proto.FieldKeep, error) {
-	return sc.storage.SyncFields(ctx, user, data)
+func (sc *StorageContext) DelField(ctx context.Context, user string, uuid string) (string, bool) {
+	return sc.storage.DelField(ctx, user, uuid)
 }
