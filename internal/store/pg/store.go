@@ -217,3 +217,59 @@ func (db *Database) DelField(ctx context.Context, user string, uuid string) (str
 
 	return uuid, true
 }
+
+// ListFields возвращает список данных.
+func (db *Database) ListFields(ctx context.Context, user string) ([]*proto.FieldExtended, bool) {
+	var listFields []*proto.FieldExtended
+	var fieldExt proto.FieldExtended
+	var field proto.FieldKeep
+
+	idUser, err := db.getUserID(ctx, user)
+	if err != nil {
+		return listFields, false
+	}
+
+	rows, err := db.Conn.Query(ctx,
+		`SELECT 
+			uuid,
+			login,
+			password,
+			data,
+			card_number,
+			card_cvc,
+			card_date,
+			card_owner
+		FROM 
+			store
+		WHERE 
+			user_id = $1`,
+		idUser)
+	if err != nil {
+		logger.Log.Warn("Ошибка выполнения запроса ", zap.Error(err))
+		return listFields, false
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		// err = rows.Scan(&field.Uuid)
+		err = rows.Scan(
+			&fieldExt.Uuid,
+			&field.Login,
+			&field.Password,
+			&field.Data,
+			&field.CardNumber,
+			&field.CardCVC,
+			&field.CardDate,
+			&field.CardOwner)
+		if err != nil {
+			logger.Log.Warn("Ошибка при сканировании строки:", zap.Error(err))
+			return listFields, false
+		}
+		fieldExt.Data = &field
+
+		listFields = append(listFields, &fieldExt)
+	}
+
+	return listFields, true
+}

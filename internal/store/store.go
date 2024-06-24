@@ -20,6 +20,7 @@ type StorageInterface interface {
 	AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, bool)
 	EditField(ctx context.Context, user string, uuid string, data *proto.FieldKeep) (*proto.FieldKeep, bool)
 	DelField(ctx context.Context, user string, uuid string) (string, bool)
+	ListFields(ctx context.Context, login string) ([]*proto.FieldExtended, bool)
 }
 
 // StorageContext содержит текущее хранилище.
@@ -33,13 +34,13 @@ func (sc *StorageContext) SetStorage(storage StorageInterface) {
 }
 
 // UserRegister добавляет нового пользоватяля.
-func (sc *StorageContext) UserRegister(ctx context.Context, login string, password string) error {
-	return sc.storage.UserRegister(ctx, login, password)
+func (sc *StorageContext) UserRegister(ctx context.Context, user string, password string) error {
+	return sc.storage.UserRegister(ctx, user, password)
 }
 
 // UserLogin проверяет учетные данные пользователя.
-func (sc *StorageContext) UserLogin(ctx context.Context, login string, password string) error {
-	return sc.storage.UserLogin(ctx, login, password)
+func (sc *StorageContext) UserLogin(ctx context.Context, user string, password string) error {
+	return sc.storage.UserLogin(ctx, user, password)
 }
 
 // AddField добавляет данные.
@@ -55,4 +56,9 @@ func (sc *StorageContext) EditField(ctx context.Context, user string, uuid strin
 // DelField удаляет данные.
 func (sc *StorageContext) DelField(ctx context.Context, user string, uuid string) (string, bool) {
 	return sc.storage.DelField(ctx, user, uuid)
+}
+
+// ListFields возвращает список данных пользователя.
+func (sc *StorageContext) ListFields(ctx context.Context, user string) ([]*proto.FieldExtended, bool) {
+	return sc.storage.ListFields(ctx, user)
 }

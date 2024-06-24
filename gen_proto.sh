@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 export GOPATH=$HOME/go;
 export GO_LIBS=$HOME/go_libs;
 export PATH=$PATH:$GOPATH/bin;

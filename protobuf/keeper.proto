@@ -61,7 +61,6 @@ message FieldKeep  {
     string cardCVC = 7;
     string cardDate = 8;
     string cardOwner = 9;
-    
 }
 
 message AddFieldKeepRequest {
@@ -96,8 +95,13 @@ message ListFieldsKeepRequest {
     
 }
 
+message FieldExtended { 
+    string uuid = 1;
+    FieldKeep data = 2;
+}
+
 message ListFielsdKeepResponse {
-    repeated string uuid =1;
+    repeated FieldExtended data= 1;
     string error = 2;
 }
 
@@ -161,8 +165,7 @@ service GophKeeper {
     rpc ListFields (ListFieldsKeepRequest) returns (ListFielsdKeepResponse)
     {
         option(google.api.http) = {
-            post: "/api/list"
-            body: "*"
+            get: "/api/list"
         };
         option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
             security: {

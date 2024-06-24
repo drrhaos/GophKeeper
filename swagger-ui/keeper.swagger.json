@@ -130,7 +130,7 @@
       }
     },
     "/api/list": {
-      "post": {
+      "get": {
         "operationId": "GophKeeper_ListFields",
         "responses": {
           "200": {
@@ -146,16 +146,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/gophkeeperListFieldsKeepRequest"
-            }
-          }
-        ],
         "tags": [
           "GophKeeper"
         ],
@@ -284,6 +274,17 @@
         }
       }
     },
+    "gophkeeperFieldExtended": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/definitions/gophkeeperFieldKeep"
+        }
+      }
+    },
     "gophkeeperFieldKeep": {
       "type": "object",
       "properties": {
@@ -316,16 +317,14 @@
         }
       }
     },
-    "gophkeeperListFieldsKeepRequest": {
-      "type": "object"
-    },
     "gophkeeperListFielsdKeepResponse": {
       "type": "object",
       "properties": {
-        "uuid": {
+        "data": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "object",
+            "$ref": "#/definitions/gophkeeperFieldExtended"
           }
         },
         "error": {

@@ -157,29 +157,12 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb
 // AddField добавдяет запись в хранилище.
 func (ms *GophKeeperServer) AddField(ctx context.Context, in *pb.AddFieldKeepRequest) (*pb.AddFieldKeepResponse, error) {
 	var response pb.AddFieldKeepResponse
-	var token string
 
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		values := md.Get("Authorization")
-		if len(values) > 0 {
-			token = values[0]
-		}
+	claims, err := ms.checkTokek(ctx)
+	if err != nil {
+		return &response, err
 	}
 
-	claims := &UserClaims{}
-	parsedToken, err := jwt.ParseWithClaims(token, claims,
-		func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-			}
-			return []byte(ms.cfg.SecretKey), nil
-		})
-
-	if err != nil || !parsedToken.Valid {
-		logger.Log.Warn("Недействительный JWT-токен")
-		return &response, ErrNotValidToken
-	}
 	uuid, ok := ms.storage.AddField(ctx, claims.Username, in.GetData())
 	if !ok {
 		return &response, ErrNotValidData
@@ -193,29 +176,11 @@ func (ms *GophKeeperServer) AddField(ctx context.Context, in *pb.AddFieldKeepReq
 // EditField изменяет запись в хранилище.
 func (ms *GophKeeperServer) EditField(ctx context.Context, in *pb.EditFieldKeepRequest) (*pb.EditFieldKeepResponse, error) {
 	var response pb.EditFieldKeepResponse
-	var token string
-
-	md, ok := metadata.FromIncomingContext(ctx)
-	if ok {
-		values := md.Get("Authorization")
-		if len(values) > 0 {
-			token = values[0]
-		}
+	claims, err := ms.checkTokek(ctx)
+	if err != nil {
+		return &response, err
 	}
-
-	claims := &UserClaims{}
-	parsedToken, err := jwt.ParseWithClaims(token, claims,
-		func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-			}
-			return []byte(ms.cfg.SecretKey), nil
-		})
-
-	if err != nil || !parsedToken.Valid {
-		logger.Log.Warn("Недействительный JWT-токен")
-		return &response, ErrNotValidToken
-	}
+	var ok bool
 	response.Data, ok = ms.storage.EditField(ctx, claims.Username, in.GetUuid(), in.GetData())
 	if !ok {
 		return &response, ErrNotValidData
@@ -228,6 +193,40 @@ func (ms *GophKeeperServer) EditField(ctx context.Context, in *pb.EditFieldKeepR
 // DelField удаляет запись из хранилища.
 func (ms *GophKeeperServer) DelField(ctx context.Context, in *pb.DeleteFieldKeepRequest) (*pb.DeleteFieldKeepResponse, error) {
 	var response pb.DeleteFieldKeepResponse
+	claims, err := ms.checkTokek(ctx)
+	if err != nil {
+		return &response, err
+	}
+
+	uuid, ok := ms.storage.DelField(ctx, claims.Username, in.GetUuid())
+	if !ok {
+		return &response, ErrNotValidData
+	}
+	response.Uuid = uuid
+	logger.Log.Info("Запись удалена")
+
+	return &response, nil
+}
+
+// ListFields возвращает список записей.
+func (ms *GophKeeperServer) ListFields(ctx context.Context, in *pb.ListFieldsKeepRequest) (*pb.ListFielsdKeepResponse, error) {
+	var response pb.ListFielsdKeepResponse
+	claims, err := ms.checkTokek(ctx)
+	if err != nil {
+		return &response, err
+	}
+	var ok bool
+	response.Data, ok = ms.storage.ListFields(ctx, claims.Username)
+	if !ok {
+		return &response, ErrNotValidData
+	}
+
+	logger.Log.Info("Данные получены")
+
+	return &response, nil
+}
+
+func (ms *GophKeeperServer) checkTokek(ctx context.Context) (*UserClaims, error) {
 	var token string
 
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -249,43 +248,7 @@ func (ms *GophKeeperServer) DelField(ctx context.Context, in *pb.DeleteFieldKeep
 
 	if err != nil || !parsedToken.Valid {
 		logger.Log.Warn("Недействительный JWT-токен")
-		return &response, ErrNotValidToken
+		return claims, ErrNotValidToken
 	}
-
-	uuid, ok := ms.storage.DelField(ctx, claims.Username, in.GetUuid())
-	if !ok {
-		return &response, ErrNotValidData
-	}
-	response.Uuid = uuid
-	logger.Log.Info("Запись удалена")
-
-	return &response, nil
+	return claims, nil
 }
-
-// // SyncData синхронизация данных.
-// func (ms *GophKeeperServer) SyncData(ctx context.Context, in *pb.SyncRequest) (*pb.SyncResponse, error) {
-// 	var response pb.SyncResponse
-
-// 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-// 	defer cancel()
-
-// 	claims := &UserClaims{}
-// 	parsedToken, err := jwt.ParseWithClaims(in.GetToken(), claims,
-// 		func(t *jwt.Token) (interface{}, error) {
-// 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-// 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-// 			}
-// 			return []byte(ms.cfg.SecretKey), nil
-// 		})
-
-// 	if err != nil || !parsedToken.Valid {
-// 		logger.Log.Warn("Недействительный JWT-токен")
-// 		return &response, ErrNotValidToken
-// 	}
-
-// 	ms.storage.SyncFields(ctx, claims.Username, in.GetData())
-
-// 	logger.Log.Info("Данные синхронизированны")
-
-// 	return &response, nil
-// }
