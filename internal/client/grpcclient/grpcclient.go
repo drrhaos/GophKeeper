@@ -55,9 +55,23 @@ func (client *GRPCClient) GetListFields() *pb.ListFielsdKeepResponse {
 	return resp
 }
 
-// SaveField сохранение хаписи на сервере.
+// SaveField сохранение записи на сервере.
 func (client *GRPCClient) SaveField(field *pb.EditFieldKeepRequest) (*pb.EditFieldKeepResponse, error) {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	return client.client.EditField(ctx, field)
+}
+
+// AddField добавление записи на сервере.
+func (client *GRPCClient) AddField(field *pb.AddFieldKeepRequest) (*pb.AddFieldKeepResponse, error) {
+	md := metadata.New(map[string]string{"Authorization": client.token})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	return client.client.AddField(ctx, field)
+}
+
+// DelField удаление записи на сервере.
+func (client *GRPCClient) DelField(field *pb.DeleteFieldKeepRequest) (*pb.DeleteFieldKeepResponse, error) {
+	md := metadata.New(map[string]string{"Authorization": client.token})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	return client.client.DelField(ctx, field)
 }

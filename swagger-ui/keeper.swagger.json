@@ -236,6 +236,9 @@
         "uuid": {
           "type": "string"
         },
+        "data": {
+          "$ref": "#/definitions/gophkeeperFieldKeep"
+        },
         "error": {
           "type": "string"
         }

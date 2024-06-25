@@ -17,7 +17,7 @@ var (
 type StorageInterface interface {
 	UserRegister(ctx context.Context, login string, password string) error
 	UserLogin(ctx context.Context, login string, password string) error
-	AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, bool)
+	AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, *proto.FieldKeep, bool)
 	EditField(ctx context.Context, user string, uuid string, data *proto.FieldKeep) (*proto.FieldKeep, bool)
 	DelField(ctx context.Context, user string, uuid string) (string, bool)
 	ListFields(ctx context.Context, user string) (fieldExt *proto.ListFielsdKeepResponse, ok bool)
@@ -44,7 +44,7 @@ func (sc *StorageContext) UserLogin(ctx context.Context, user string, password s
 }
 
 // AddField добавляет данные.
-func (sc *StorageContext) AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, bool) {
+func (sc *StorageContext) AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, *proto.FieldKeep, bool) {
 	return sc.storage.AddField(ctx, user, data)
 }
 

@@ -69,7 +69,8 @@ message AddFieldKeepRequest {
 
 message AddFieldKeepResponse {
     string uuid = 1;
-    string error = 2;
+    FieldKeep data = 2;
+    string error = 3;
 }
 
 message EditFieldKeepRequest {
@@ -94,17 +95,6 @@ message DeleteFieldKeepResponse {
 message ListFieldsKeepRequest {
     
 }
-
-// message FieldExtended { 
-//     string uuid = 1;
-//     FieldKeep data = 2;
-// }
-
-// message ListFielsdKeepResponse {
-//     repeated FieldExtended data= 1;
-//     string error = 2;
-// }
-
 
 message ListFielsdKeepResponse {
     map<string, FieldKeep> data = 1;

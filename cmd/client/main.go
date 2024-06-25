@@ -20,5 +20,7 @@ func main() {
 		logger.Log.Panic("Error read config")
 	}
 
-	tuiclient.Run(cfg)
+	formUI := tuiclient.Form{}
+
+	formUI.NewForm(cfg)
 }

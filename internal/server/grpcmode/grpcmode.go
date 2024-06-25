@@ -163,11 +163,12 @@ func (ms *GophKeeperServer) AddField(ctx context.Context, in *pb.AddFieldKeepReq
 		return &response, err
 	}
 
-	uuid, ok := ms.storage.AddField(ctx, claims.Username, in.GetData())
+	var ok bool
+	response.Uuid, response.Data, ok = ms.storage.AddField(ctx, claims.Username, in.GetData())
 	if !ok {
 		return &response, ErrNotValidData
 	}
-	response.Uuid = uuid
+
 	logger.Log.Info("Данные добавлены")
 
 	return &response, nil

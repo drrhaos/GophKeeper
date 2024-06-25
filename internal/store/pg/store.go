@@ -130,12 +130,12 @@ func (db *Database) UserLogin(ctx context.Context, login string, password string
 }
 
 // AddField добавляет данные.
-func (db *Database) AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, bool) {
+func (db *Database) AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, *proto.FieldKeep, bool) {
 	uuid := uuid.New().String()
 
 	idUser, err := db.getUserID(ctx, user)
 	if err != nil {
-		return "", false
+		return "", nil, false
 	}
 	_, err = db.Conn.Exec(ctx,
 		`INSERT INTO store (user_id, uuid, login, password, data, card_number, card_cvc, card_date, card_owner, update_at)
@@ -152,11 +152,11 @@ func (db *Database) AddField(ctx context.Context, user string, data *proto.Field
 		time.Now())
 	if err != nil {
 		logger.Log.Warn("Не удалось добавить запись", zap.Error(err))
-		return "", false
+		return "", nil, false
 	}
 	logger.Log.Info("Добавлена новая запись")
 
-	return uuid, true
+	return uuid, data, true
 }
 
 // EditField добавляет данные.
