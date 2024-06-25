@@ -14,6 +14,7 @@ import (
 	"github.com/marcusolsson/tui-go"
 )
 
+// Form описывает структуру графического интерфейса.
 type Form struct {
 	ui         tui.UI
 	listRows   *tui.List

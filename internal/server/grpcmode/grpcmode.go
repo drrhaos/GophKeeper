@@ -96,14 +96,7 @@ func (ms *GophKeeperServer) Register(ctx context.Context, in *pb.RegisterRequest
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString([]byte(ms.cfg.SecretKey))
-	if err != nil {
-		logger.Log.Warn("Ошибка создания токена:", zap.Error(err))
-		return &response, err
-	}
-
-	response.Token = tokenString
-
+	response.Token, err = token.SignedString([]byte(ms.cfg.SecretKey))
 	if err != nil {
 		logger.Log.Warn("Ошибка создания токена:", zap.Error(err))
 		return &response, err
