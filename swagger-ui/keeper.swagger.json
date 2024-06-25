@@ -274,17 +274,6 @@
         }
       }
     },
-    "gophkeeperFieldExtended": {
-      "type": "object",
-      "properties": {
-        "uuid": {
-          "type": "string"
-        },
-        "data": {
-          "$ref": "#/definitions/gophkeeperFieldKeep"
-        }
-      }
-    },
     "gophkeeperFieldKeep": {
       "type": "object",
       "properties": {
@@ -321,10 +310,9 @@
       "type": "object",
       "properties": {
         "data": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/gophkeeperFieldExtended"
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/gophkeeperFieldKeep"
           }
         },
         "error": {

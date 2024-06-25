@@ -20,7 +20,7 @@ type StorageInterface interface {
 	AddField(ctx context.Context, user string, data *proto.FieldKeep) (string, bool)
 	EditField(ctx context.Context, user string, uuid string, data *proto.FieldKeep) (*proto.FieldKeep, bool)
 	DelField(ctx context.Context, user string, uuid string) (string, bool)
-	ListFields(ctx context.Context, login string) ([]*proto.FieldExtended, bool)
+	ListFields(ctx context.Context, user string) (fieldExt *proto.ListFielsdKeepResponse, ok bool)
 }
 
 // StorageContext содержит текущее хранилище.
@@ -59,6 +59,6 @@ func (sc *StorageContext) DelField(ctx context.Context, user string, uuid string
 }
 
 // ListFields возвращает список данных пользователя.
-func (sc *StorageContext) ListFields(ctx context.Context, user string) ([]*proto.FieldExtended, bool) {
+func (sc *StorageContext) ListFields(ctx context.Context, user string) (fieldExt *proto.ListFielsdKeepResponse, ok bool) {
 	return sc.storage.ListFields(ctx, user)
 }

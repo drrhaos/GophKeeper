@@ -219,14 +219,14 @@ func (db *Database) DelField(ctx context.Context, user string, uuid string) (str
 }
 
 // ListFields возвращает список данных.
-func (db *Database) ListFields(ctx context.Context, user string) ([]*proto.FieldExtended, bool) {
-	var listFields []*proto.FieldExtended
-	var fieldExt proto.FieldExtended
-	var field proto.FieldKeep
+func (db *Database) ListFields(ctx context.Context, user string) (fieldExt *proto.ListFielsdKeepResponse, ok bool) {
+	fieldExt = &proto.ListFielsdKeepResponse{
+		Data: make(map[string]*proto.FieldKeep),
+	}
 
 	idUser, err := db.getUserID(ctx, user)
 	if err != nil {
-		return listFields, false
+		return fieldExt, false
 	}
 
 	rows, err := db.Conn.Query(ctx,
@@ -246,15 +246,17 @@ func (db *Database) ListFields(ctx context.Context, user string) ([]*proto.Field
 		idUser)
 	if err != nil {
 		logger.Log.Warn("Ошибка выполнения запроса ", zap.Error(err))
-		return listFields, false
+		return fieldExt, false
 	}
 
 	defer rows.Close()
 
 	for rows.Next() {
+		var field proto.FieldKeep
 		// err = rows.Scan(&field.Uuid)
+		var uuid string
 		err = rows.Scan(
-			&fieldExt.Uuid,
+			&uuid,
 			&field.Login,
 			&field.Password,
 			&field.Data,
@@ -264,12 +266,11 @@ func (db *Database) ListFields(ctx context.Context, user string) ([]*proto.Field
 			&field.CardOwner)
 		if err != nil {
 			logger.Log.Warn("Ошибка при сканировании строки:", zap.Error(err))
-			return listFields, false
+			return fieldExt, false
 		}
-		fieldExt.Data = &field
 
-		listFields = append(listFields, &fieldExt)
+		fieldExt.Data[uuid] = &field
 	}
 
-	return listFields, true
+	return fieldExt, true
 }

@@ -158,7 +158,7 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb
 func (ms *GophKeeperServer) AddField(ctx context.Context, in *pb.AddFieldKeepRequest) (*pb.AddFieldKeepResponse, error) {
 	var response pb.AddFieldKeepResponse
 
-	claims, err := ms.checkTokek(ctx)
+	claims, err := ms.checkToken(ctx)
 	if err != nil {
 		return &response, err
 	}
@@ -176,7 +176,7 @@ func (ms *GophKeeperServer) AddField(ctx context.Context, in *pb.AddFieldKeepReq
 // EditField изменяет запись в хранилище.
 func (ms *GophKeeperServer) EditField(ctx context.Context, in *pb.EditFieldKeepRequest) (*pb.EditFieldKeepResponse, error) {
 	var response pb.EditFieldKeepResponse
-	claims, err := ms.checkTokek(ctx)
+	claims, err := ms.checkToken(ctx)
 	if err != nil {
 		return &response, err
 	}
@@ -193,7 +193,7 @@ func (ms *GophKeeperServer) EditField(ctx context.Context, in *pb.EditFieldKeepR
 // DelField удаляет запись из хранилища.
 func (ms *GophKeeperServer) DelField(ctx context.Context, in *pb.DeleteFieldKeepRequest) (*pb.DeleteFieldKeepResponse, error) {
 	var response pb.DeleteFieldKeepResponse
-	claims, err := ms.checkTokek(ctx)
+	claims, err := ms.checkToken(ctx)
 	if err != nil {
 		return &response, err
 	}
@@ -209,24 +209,24 @@ func (ms *GophKeeperServer) DelField(ctx context.Context, in *pb.DeleteFieldKeep
 }
 
 // ListFields возвращает список записей.
-func (ms *GophKeeperServer) ListFields(ctx context.Context, in *pb.ListFieldsKeepRequest) (*pb.ListFielsdKeepResponse, error) {
-	var response pb.ListFielsdKeepResponse
-	claims, err := ms.checkTokek(ctx)
+func (ms *GophKeeperServer) ListFields(ctx context.Context, _ *pb.ListFieldsKeepRequest) (*pb.ListFielsdKeepResponse, error) {
+	var response *pb.ListFielsdKeepResponse
+	claims, err := ms.checkToken(ctx)
 	if err != nil {
-		return &response, err
+		return response, err
 	}
 	var ok bool
-	response.Data, ok = ms.storage.ListFields(ctx, claims.Username)
+	response, ok = ms.storage.ListFields(ctx, claims.Username)
 	if !ok {
-		return &response, ErrNotValidData
+		return response, ErrNotValidData
 	}
 
 	logger.Log.Info("Данные получены")
 
-	return &response, nil
+	return response, nil
 }
 
-func (ms *GophKeeperServer) checkTokek(ctx context.Context) (*UserClaims, error) {
+func (ms *GophKeeperServer) checkToken(ctx context.Context) (*UserClaims, error) {
 	var token string
 
 	md, ok := metadata.FromIncomingContext(ctx)
