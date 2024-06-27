@@ -21,8 +21,8 @@ type GRPCClient struct {
 	token  string
 }
 
-// NewGRPCClient устанавливает соединение с сервером.
-func NewGRPCClient(cfg configure.Config, user string, password string) (*GRPCClient, error) {
+// Connect устанавливает соединение с сервером.
+func Connect(cfg configure.Config, user string, password string) (*GRPCClient, error) {
 	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Log.Warn("Не удалось установить соединение с сервером", zap.Error(err))
@@ -37,6 +37,29 @@ func NewGRPCClient(cfg configure.Config, user string, password string) (*GRPCCli
 	res, err := client.Login(context.Background(), &req)
 	if err != nil {
 		logger.Log.Warn("Не удалось авторизоваться", zap.Error(err))
+		return nil, err
+	}
+	token := res.GetToken()
+
+	return &GRPCClient{client: client, token: token}, nil
+}
+
+// Reg регистрирует нового польщователя.
+func Reg(cfg configure.Config, user string, password string) (*GRPCClient, error) {
+	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logger.Log.Warn("Не удалось установить соединение с сервером", zap.Error(err))
+		return nil, err
+	}
+
+	client := pb.NewGophKeeperClient(conn)
+	req := pb.RegisterRequest{
+		Login:    user,
+		Password: password,
+	}
+	res, err := client.Register(context.Background(), &req)
+	if err != nil {
+		logger.Log.Warn("Не удалось зарегистрироваться", zap.Error(err))
 		return nil, err
 	}
 	token := res.GetToken()

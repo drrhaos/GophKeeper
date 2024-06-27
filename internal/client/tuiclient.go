@@ -2,8 +2,12 @@
 package tuiclient
 
 import (
+	"bufio"
 	"fmt"
 	"image"
+	"os"
+	"strings"
+	"syscall"
 
 	"gophkeeper/internal/client/configure"
 	"gophkeeper/internal/client/grpcclient"
@@ -12,6 +16,8 @@ import (
 	pb "gophkeeper/pkg/proto"
 
 	"github.com/marcusolsson/tui-go"
+	"go.uber.org/zap"
+	"golang.org/x/term"
 )
 
 // Form описывает структуру графического интерфейса.
@@ -40,13 +46,58 @@ type Form struct {
 	listFields *proto.ListFielsdKeepResponse
 }
 
+func credentials() (bool, string, string, error) {
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print("Введите 'да' если хотите зарегистрироваться: ")
+	regText, err := reader.ReadString('\n')
+	if err != nil {
+		return false, "", "", err
+	}
+	var reg bool
+	if regText == "да" {
+		reg = true
+	}
+	fmt.Print("Введите имя пользователя: ")
+	username, err := reader.ReadString('\n')
+	if err != nil {
+		return reg, "", "", err
+	}
+
+	fmt.Print("Введите пароль: ")
+	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		return reg, "", "", err
+	}
+
+	password := string(bytePassword)
+	return reg, strings.TrimSpace(username), strings.TrimSpace(password), nil
+}
+
 // NewForm создает базовую форму.
 func (fm *Form) NewForm(cfg configure.Config) {
+	var successfully bool
 	var err error
-	fm.cli, err = grpcclient.NewGRPCClient(cfg, "test", "test")
-	if err != nil {
-		logger.Log.Panic("Не удалось установить соединение с сервером")
+	for !successfully {
+		reg, login, password, err := credentials()
+		if err != nil {
+			logger.Log.Panic("Ошибка при вводе учетных данных")
+		}
+		if reg {
+			fm.cli, err = grpcclient.Reg(cfg, login, password)
+			if err != nil {
+				logger.Log.Warn("Не удалось зарегистрировать пользователя", zap.Error(err))
+			}
+		}
+
+		fm.cli, err = grpcclient.Connect(cfg, login, password)
+		if err != nil {
+			logger.Log.Warn("Не удалось установить соединение с сервером", zap.Error(err))
+		} else {
+			successfully = true
+		}
 	}
+
 	fm.listRows = tui.NewList()
 
 	gridFields := tui.NewGrid(2, 8)
