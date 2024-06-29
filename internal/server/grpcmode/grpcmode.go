@@ -5,8 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"path/filepath"
 	"time"
 
 	"gophkeeper/internal/logger"
@@ -245,4 +247,37 @@ func (ms *GophKeeperServer) checkToken(ctx context.Context) (*UserClaims, error)
 		return claims, ErrNotValidToken
 	}
 	return claims, nil
+}
+
+// Upload загрузка файла на сервер
+func (ms *GophKeeperServer) Upload(stream pb.GophKeeper_UploadServer) error {
+	file := NewFile()
+	var fileSize uint32
+	fileSize = 0
+	defer func() {
+		if err := file.OutputFile.Close(); err != nil {
+			logger.Log.Warn("Ошибка при закрытии файла", zap.Error(err))
+		}
+	}()
+	for {
+		req, err := stream.Recv()
+		if file.FilePath == "" {
+			file.SetFile(req.GetFileName(), ms.cfg.StaticPath)
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		chunk := req.GetChunk()
+		fileSize += uint32(len(chunk))
+		// g.l.Debug("received a chunk with size: %d", fileSize)
+		if err := file.Write(chunk); err != nil {
+			return err
+		}
+	}
+	fileName := filepath.Base(file.FilePath)
+	logger.Log.Info(fmt.Sprintf("saved file: %s, size: %d", fileName, fileSize))
+	return stream.SendAndClose(&pb.FileUploadResponse{FileName: fileName, Size: fileSize})
 }

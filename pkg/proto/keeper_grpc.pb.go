@@ -26,6 +26,7 @@ const (
 	GophKeeper_EditField_FullMethodName  = "/gophkeeper.GophKeeper/EditField"
 	GophKeeper_DelField_FullMethodName   = "/gophkeeper.GophKeeper/DelField"
 	GophKeeper_ListFields_FullMethodName = "/gophkeeper.GophKeeper/ListFields"
+	GophKeeper_Upload_FullMethodName     = "/gophkeeper.GophKeeper/Upload"
 )
 
 // GophKeeperClient is the client API for GophKeeper service.
@@ -38,6 +39,7 @@ type GophKeeperClient interface {
 	EditField(ctx context.Context, in *EditFieldKeepRequest, opts ...grpc.CallOption) (*EditFieldKeepResponse, error)
 	DelField(ctx context.Context, in *DeleteFieldKeepRequest, opts ...grpc.CallOption) (*DeleteFieldKeepResponse, error)
 	ListFields(ctx context.Context, in *ListFieldsKeepRequest, opts ...grpc.CallOption) (*ListFielsdKeepResponse, error)
+	Upload(ctx context.Context, opts ...grpc.CallOption) (GophKeeper_UploadClient, error)
 }
 
 type gophKeeperClient struct {
@@ -108,6 +110,41 @@ func (c *gophKeeperClient) ListFields(ctx context.Context, in *ListFieldsKeepReq
 	return out, nil
 }
 
+func (c *gophKeeperClient) Upload(ctx context.Context, opts ...grpc.CallOption) (GophKeeper_UploadClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GophKeeper_ServiceDesc.Streams[0], GophKeeper_Upload_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gophKeeperUploadClient{ClientStream: stream}
+	return x, nil
+}
+
+type GophKeeper_UploadClient interface {
+	Send(*FileUploadRequest) error
+	CloseAndRecv() (*FileUploadResponse, error)
+	grpc.ClientStream
+}
+
+type gophKeeperUploadClient struct {
+	grpc.ClientStream
+}
+
+func (x *gophKeeperUploadClient) Send(m *FileUploadRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *gophKeeperUploadClient) CloseAndRecv() (*FileUploadResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(FileUploadResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GophKeeperServer is the server API for GophKeeper service.
 // All implementations must embed UnimplementedGophKeeperServer
 // for forward compatibility
@@ -118,6 +155,7 @@ type GophKeeperServer interface {
 	EditField(context.Context, *EditFieldKeepRequest) (*EditFieldKeepResponse, error)
 	DelField(context.Context, *DeleteFieldKeepRequest) (*DeleteFieldKeepResponse, error)
 	ListFields(context.Context, *ListFieldsKeepRequest) (*ListFielsdKeepResponse, error)
+	Upload(GophKeeper_UploadServer) error
 	mustEmbedUnimplementedGophKeeperServer()
 }
 
@@ -142,6 +180,9 @@ func (UnimplementedGophKeeperServer) DelField(context.Context, *DeleteFieldKeepR
 }
 func (UnimplementedGophKeeperServer) ListFields(context.Context, *ListFieldsKeepRequest) (*ListFielsdKeepResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFields not implemented")
+}
+func (UnimplementedGophKeeperServer) Upload(GophKeeper_UploadServer) error {
+	return status.Errorf(codes.Unimplemented, "method Upload not implemented")
 }
 func (UnimplementedGophKeeperServer) mustEmbedUnimplementedGophKeeperServer() {}
 
@@ -264,6 +305,32 @@ func _GophKeeper_ListFields_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GophKeeper_Upload_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GophKeeperServer).Upload(&gophKeeperUploadServer{ServerStream: stream})
+}
+
+type GophKeeper_UploadServer interface {
+	SendAndClose(*FileUploadResponse) error
+	Recv() (*FileUploadRequest, error)
+	grpc.ServerStream
+}
+
+type gophKeeperUploadServer struct {
+	grpc.ServerStream
+}
+
+func (x *gophKeeperUploadServer) SendAndClose(m *FileUploadResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *gophKeeperUploadServer) Recv() (*FileUploadRequest, error) {
+	m := new(FileUploadRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GophKeeper_ServiceDesc is the grpc.ServiceDesc for GophKeeper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -296,6 +363,12 @@ var GophKeeper_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GophKeeper_ListFields_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Upload",
+			Handler:       _GophKeeper_Upload_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "keeper.proto",
 }

@@ -1,8 +1,8 @@
 package main
 
 import (
-	tuiclient "gophkeeper/internal/client"
 	"gophkeeper/internal/client/configure"
+	"gophkeeper/internal/client/tuiclient"
 	"gophkeeper/internal/logger"
 )
 

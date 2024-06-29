@@ -3,6 +3,8 @@ package grpcclient
 
 import (
 	"context"
+	"io"
+	"os"
 
 	"gophkeeper/internal/client/configure"
 	"gophkeeper/internal/logger"
@@ -25,7 +27,7 @@ type GRPCClient struct {
 func Connect(cfg configure.Config, user string, password string) (*GRPCClient, error) {
 	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Log.Warn("Не удалось установить соединение с сервером", zap.Error(err))
+		// logger.Log.Warn("Не удалось установить соединение с сервером", zap.Error(err))
 		return nil, err
 	}
 
@@ -36,7 +38,7 @@ func Connect(cfg configure.Config, user string, password string) (*GRPCClient, e
 	}
 	res, err := client.Login(context.Background(), &req)
 	if err != nil {
-		logger.Log.Warn("Не удалось авторизоваться", zap.Error(err))
+		// logger.Log.Warn("Не удалось авторизоваться", zap.Error(err))
 		return nil, err
 	}
 	token := res.GetToken()
@@ -97,4 +99,40 @@ func (client *GRPCClient) DelField(field *pb.DeleteFieldKeepRequest) (*pb.Delete
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	return client.client.DelField(ctx, field)
+}
+
+// Upload загрузка файла на сервер.
+func (client *GRPCClient) Upload(ctx context.Context, filePath string) error {
+	stream, err := client.client.Upload(ctx)
+	if err != nil {
+		return err
+	}
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	buf := make([]byte, 1024)
+	batchNumber := 1
+	for {
+		num, err := file.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		chunk := buf[:num]
+
+		if err := stream.Send(&pb.FileUploadRequest{FileName: filePath, Chunk: chunk}); err != nil {
+			return err
+		}
+		batchNumber++
+
+	}
+	_, err = stream.CloseAndRecv()
+	if err != nil {
+		return err
+	}
+	// logger.Log.Info(fmt.Sprintf("Sent - %v bytes - %s", res.GetSize(), res.GetFileName()))
+	return nil
 }

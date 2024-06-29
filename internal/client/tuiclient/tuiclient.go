@@ -3,6 +3,7 @@ package tuiclient
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"image"
 	"os"
@@ -11,12 +12,10 @@ import (
 
 	"gophkeeper/internal/client/configure"
 	"gophkeeper/internal/client/grpcclient"
-	"gophkeeper/internal/logger"
 	"gophkeeper/pkg/proto"
 	pb "gophkeeper/pkg/proto"
 
 	"github.com/marcusolsson/tui-go"
-	"go.uber.org/zap"
 	"golang.org/x/term"
 )
 
@@ -39,6 +38,10 @@ type Form struct {
 	saveButton   *tui.Button
 	deleteButton *tui.Button
 	cancelButton *tui.Button
+
+	fileNameEdit  *tui.TextEdit
+	addFileButton *tui.Button
+	delFileButton *tui.Button
 
 	statusBar *tui.StatusBar
 
@@ -76,27 +79,13 @@ func credentials() (bool, string, string, error) {
 
 // NewForm создает базовую форму.
 func (fm *Form) NewForm(cfg configure.Config) {
-	var successfully bool
 	var err error
-	for !successfully {
-		reg, login, password, err := credentials()
-		if err != nil {
-			logger.Log.Panic("Ошибка при вводе учетных данных")
-		}
-		if reg {
-			fm.cli, err = grpcclient.Reg(cfg, login, password)
-			if err != nil {
-				logger.Log.Warn("Не удалось зарегистрировать пользователя", zap.Error(err))
-			}
-		}
-
-		fm.cli, err = grpcclient.Connect(cfg, login, password)
-		if err != nil {
-			logger.Log.Warn("Не удалось установить соединение с сервером", zap.Error(err))
-		} else {
-			successfully = true
-		}
+	formLogin := FormLogin{}
+	formLogin.NewFormLogin(cfg)
+	if formLogin.Cli == nil {
+		return
 	}
+	fm.cli = formLogin.Cli
 
 	fm.listRows = tui.NewList()
 
@@ -137,9 +126,6 @@ func (fm *Form) NewForm(cfg configure.Config) {
 
 	sidebarList := tui.NewVBox(fm.listRows)
 	sidebarList.SetBorder(true)
-	fieldSidebar := tui.NewVBox(gridFields, tui.NewSpacer())
-	fieldSidebar.SetBorder(true)
-	fieldSidebar.SetSizePolicy(tui.Expanding, tui.Expanding)
 
 	boxButton := tui.NewHBox()
 	boxButton.SetBorder(true)
@@ -153,6 +139,18 @@ func (fm *Form) NewForm(cfg configure.Config) {
 	boxButton.Append(tui.NewSpacer())
 	fm.cancelButton = tui.NewButton("  Отменить  ")
 	boxButton.Append(fm.cancelButton)
+
+	boxFile := tui.NewHBox()
+	fm.fileNameEdit = tui.NewTextEdit()
+	boxFile.Append(fm.fileNameEdit)
+	fm.addFileButton = tui.NewButton("  Добавить файл  ")
+	boxFile.Append(fm.addFileButton)
+	fm.delFileButton = tui.NewButton("  Удалить файл  ")
+	boxFile.Append(fm.delFileButton)
+
+	fieldSidebar := tui.NewVBox(gridFields, boxFile, tui.NewSpacer())
+	fieldSidebar.SetBorder(true)
+	fieldSidebar.SetSizePolicy(tui.Expanding, tui.Expanding)
 
 	fm.statusBar = tui.NewStatusBar("Соединен с севревром")
 
@@ -183,6 +181,8 @@ func (fm *Form) NewForm(cfg configure.Config) {
 		fm.cardCVCEdit,
 		fm.cardDateEdit,
 		fm.cardOwnerEdit,
+		fm.addFileButton,
+		fm.delFileButton,
 		fm.addButton,
 		fm.saveButton,
 		fm.deleteButton,
@@ -195,7 +195,9 @@ func (fm *Form) NewForm(cfg configure.Config) {
 	fm.saveButton.OnActivated(fm.saveField)
 	fm.addButton.OnActivated(fm.addField)
 	fm.deleteButton.OnActivated(fm.deleteField)
-	fm.cancelButton.OnActivated(fm.cancwlField)
+	fm.cancelButton.OnActivated(fm.cancelField)
+
+	fm.addFileButton.OnActivated(fm.addFile)
 
 	fm.loadItems()
 
@@ -240,6 +242,9 @@ func (fm *Form) saveField(_ *tui.Button) {
 	}
 
 	res, err := fm.cli.SaveField(tmpFieldExt)
+
+	fm.cli.Upload(context.Background(), "./client")
+
 	if err != nil {
 		fm.statusBar.SetText(err.Error())
 	}
@@ -293,7 +298,7 @@ func (fm *Form) deleteField(_ *tui.Button) {
 	fm.statusBar.SetText(fmt.Sprintf("Запись успешно удалена %s", res.GetUuid()))
 }
 
-func (fm *Form) cancwlField(_ *tui.Button) {
+func (fm *Form) cancelField(_ *tui.Button) {
 	if fm.listRows.Selected() < 0 {
 		fm.statusBar.SetText("Запись не выбрана")
 		return
@@ -319,4 +324,13 @@ func (fm *Form) setFeld(l *tui.List) {
 	fm.cardCVCEdit.SetText(mapList.CardCVC)
 	fm.cardDateEdit.SetText(mapList.CardDate)
 	fm.cardOwnerEdit.SetText(mapList.CardOwner)
+}
+
+func (fm *Form) addFile(_ *tui.Button) {
+	if fm.listRows.Selected() < 0 {
+		fm.statusBar.SetText("Запись не выбрана")
+		return
+	}
+	fm.fileNameEdit.SetFocused(true)
+	// fm.statusBar.SetText(fmt.Sprintf("Изменения отменены %s", uuid))
 }

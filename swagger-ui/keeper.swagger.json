@@ -309,6 +309,18 @@
         }
       }
     },
+    "gophkeeperFileUploadResponse": {
+      "type": "object",
+      "properties": {
+        "fileName": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "gophkeeperListFielsdKeepResponse": {
       "type": "object",
       "properties": {
