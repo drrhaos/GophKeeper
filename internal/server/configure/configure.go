@@ -28,7 +28,7 @@ func (cfg *Config) readFlags() {
 	workPath := flag.String("w", "./data", "Путь до рабочей дирректории")
 	databaseDsn := flag.String("d", "",
 		"Сетевой адрес базя данных postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable")
-	secretKey := flag.String("k", "test", "Сетевой адрес host:port")
+
 	flag.Parse()
 
 	if cfg.Port == "" {
@@ -49,10 +49,6 @@ func (cfg *Config) readFlags() {
 
 	if cfg.DatabaseDsn == "" {
 		cfg.DatabaseDsn = *databaseDsn
-	}
-
-	if cfg.SecretKey == "" {
-		cfg.SecretKey = *secretKey
 	}
 }
 
