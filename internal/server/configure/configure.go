@@ -4,6 +4,7 @@ package configure
 import (
 	"flag"
 	"net/url"
+	"os"
 
 	"gophkeeper/internal/logger"
 
@@ -16,14 +17,17 @@ type Config struct {
 	Address     string `env:"ADDRESS" json:"address,omitempty"`           // адрес сервера grpc
 	AddressRest string `env:"ADDRESS_REST" json:"address_rest,omitempty"` // адрес сервера rest
 	StaticPath  string `env:"STATIC_PATH" json:"static_path,omitempty"`   // путь до статических файлов
+	WorkPath    string `env:"WORK_PATH" json:"work_path,omitempty"`       // путьдо рабочей дирректории
 	DatabaseDsn string `env:"DATABASE_DSN" json:"database_dsn,omitempty"` // DSN базы данных
 	SecretKey   string `env:"SECRET_KEY" json:"secret_key,omitempty"`     // ключ шифрования
 }
 
 func (cfg *Config) readFlags() {
+
 	address := flag.String("g", "127.0.0.1:8080", "Сетевой адрес grpc host:port")
 	addressRest := flag.String("r", "127.0.0.1:8081", "Сетевой адрес rest host:port")
 	staticPath := flag.String("s", "../../swagger-ui/", "Путь до файлов статики ")
+	workPath := flag.String("w", "./data", "Путь до рабочей дирректории")
 	databaseDsn := flag.String("d", "",
 		"Сетевой адрес базя данных postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable")
 	secretKey := flag.String("k", "test", "Сетевой адрес host:port")
@@ -39,6 +43,10 @@ func (cfg *Config) readFlags() {
 
 	if cfg.StaticPath == "" {
 		cfg.StaticPath = *staticPath
+	}
+
+	if cfg.WorkPath == "" {
+		cfg.WorkPath = *workPath
 	}
 
 	if cfg.DatabaseDsn == "" {
@@ -67,6 +75,11 @@ func (cfg *Config) checkConfig() bool {
 
 	if cfg.AddressRest == "" {
 		cfg.AddressRest = "127.0.0.1:8081"
+	}
+
+	err := os.MkdirAll(cfg.WorkPath, os.ModePerm)
+	if err != nil {
+		return false
 	}
 
 	_, errURL := url.ParseRequestURI("http://" + cfg.Address)

@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 
 	"gophkeeper/internal/client/configure"
 	"gophkeeper/internal/logger"
@@ -103,6 +104,8 @@ func (client *GRPCClient) DelField(field *pb.DeleteFieldKeepRequest) (*pb.Delete
 
 // Upload загрузка файла на сервер.
 func (client *GRPCClient) Upload(ctx context.Context, filePath string) error {
+	md := metadata.New(map[string]string{"Authorization": client.token})
+	ctx = metadata.NewOutgoingContext(ctx, md)
 	stream, err := client.client.Upload(ctx)
 	if err != nil {
 		return err
@@ -113,6 +116,7 @@ func (client *GRPCClient) Upload(ctx context.Context, filePath string) error {
 	}
 	buf := make([]byte, 1024)
 	batchNumber := 1
+
 	for {
 		num, err := file.Read(buf)
 		if err == io.EOF {
@@ -123,7 +127,7 @@ func (client *GRPCClient) Upload(ctx context.Context, filePath string) error {
 		}
 		chunk := buf[:num]
 
-		if err := stream.Send(&pb.FileUploadRequest{FileName: filePath, Chunk: chunk}); err != nil {
+		if err := stream.Send(&pb.FileUploadRequest{FileName: filepath.Base(filePath), Chunk: chunk}); err != nil {
 			return err
 		}
 		batchNumber++
@@ -133,6 +137,5 @@ func (client *GRPCClient) Upload(ctx context.Context, filePath string) error {
 	if err != nil {
 		return err
 	}
-	// logger.Log.Info(fmt.Sprintf("Sent - %v bytes - %s", res.GetSize(), res.GetFileName()))
 	return nil
 }

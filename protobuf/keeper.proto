@@ -61,6 +61,7 @@ message FieldKeep  {
     string cardCVC = 7;
     string cardDate = 8;
     string cardOwner = 9;
+    string fileName = 10;
 }
 
 message AddFieldKeepRequest {

@@ -8,6 +8,7 @@
 *.so
 *.dylib
 cmd/server/server
+cmd/server/data
 cmd/client/client
 
 # Test binary, built with `go test -c`

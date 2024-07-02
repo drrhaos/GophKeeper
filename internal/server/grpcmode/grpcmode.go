@@ -251,18 +251,24 @@ func (ms *GophKeeperServer) checkToken(ctx context.Context) (*UserClaims, error)
 
 // Upload загрузка файла на сервер
 func (ms *GophKeeperServer) Upload(stream pb.GophKeeper_UploadServer) error {
+
+	_, err := ms.checkToken(stream.Context())
+	if err != nil {
+		return err
+	}
+
 	file := NewFile()
 	var fileSize uint32
 	fileSize = 0
 	defer func() {
-		if err := file.OutputFile.Close(); err != nil {
+		if err := file.Close(); err != nil {
 			logger.Log.Warn("Ошибка при закрытии файла", zap.Error(err))
 		}
 	}()
 	for {
 		req, err := stream.Recv()
 		if file.FilePath == "" {
-			file.SetFile(req.GetFileName(), ms.cfg.StaticPath)
+			file.SetFile(req.GetFileName(), ms.cfg.WorkPath)
 		}
 		if err == io.EOF {
 			break

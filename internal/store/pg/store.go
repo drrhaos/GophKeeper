@@ -138,8 +138,8 @@ func (db *Database) AddField(ctx context.Context, user string, data *proto.Field
 		return "", nil, false
 	}
 	_, err = db.Conn.Exec(ctx,
-		`INSERT INTO store (user_id, uuid, login, password, data, card_number, card_cvc, card_date, card_owner, update_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		`INSERT INTO store (user_id, uuid, login, password, data, card_number, card_cvc, card_date, card_owner, update_at, file_name)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
 		idUser,
 		uuid,
 		data.GetLogin(),
@@ -149,7 +149,8 @@ func (db *Database) AddField(ctx context.Context, user string, data *proto.Field
 		data.GetCardCVC(),
 		data.GetCardDate(),
 		data.GetCardOwner(),
-		time.Now())
+		time.Now(),
+		data.GetFileName())
 	if err != nil {
 		logger.Log.Warn("Не удалось добавить запись", zap.Error(err))
 		return "", nil, false
@@ -175,11 +176,12 @@ func (db *Database) EditField(ctx context.Context, user string, uuid string, dat
 				card_cvc=$5,
 				card_date=$6,
 				card_owner=$7,
-				update_at=$8
+				file_name=$8,
+				update_at=$9
 			WHERE 
-				user_id=$9 
+				user_id=$10
 			AND
-				uuid=$10`,
+				uuid=$11`,
 		data.GetLogin(),
 		data.GetPassword(),
 		data.GetData(),
@@ -187,6 +189,7 @@ func (db *Database) EditField(ctx context.Context, user string, uuid string, dat
 		data.GetCardCVC(),
 		data.GetCardDate(),
 		data.GetCardOwner(),
+		data.GetFileName(),
 		time.Now(),
 		idUser,
 		uuid)
@@ -238,7 +241,8 @@ func (db *Database) ListFields(ctx context.Context, user string) (fieldExt *prot
 			card_number,
 			card_cvc,
 			card_date,
-			card_owner
+			card_owner,
+			file_name
 		FROM 
 			store
 		WHERE 
@@ -263,7 +267,8 @@ func (db *Database) ListFields(ctx context.Context, user string) (fieldExt *prot
 			&field.CardNumber,
 			&field.CardCVC,
 			&field.CardDate,
-			&field.CardOwner)
+			&field.CardOwner,
+			&field.FileName)
 		if err != nil {
 			logger.Log.Warn("Ошибка при сканировании строки:", zap.Error(err))
 			return fieldExt, false

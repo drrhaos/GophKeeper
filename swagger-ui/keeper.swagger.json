@@ -306,6 +306,9 @@
         },
         "cardOwner": {
           "type": "string"
+        },
+        "fileName": {
+          "type": "string"
         }
       }
     },

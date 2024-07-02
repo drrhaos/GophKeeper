@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS public.store
     card_cvc character varying COLLATE pg_catalog."default",
     card_date character varying COLLATE pg_catalog."default",
     card_owner character varying COLLATE pg_catalog."default",
+    file_name character varying COLLATE pg_catalog."default",
+    update_at timestamp with time zone NOT NULL,
     CONSTRAINT store_pkey PRIMARY KEY (id),
     CONSTRAINT "user" FOREIGN KEY (user_id)
         REFERENCES public.users (id) MATCH SIMPLE

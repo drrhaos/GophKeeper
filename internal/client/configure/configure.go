@@ -4,6 +4,8 @@ package configure
 import (
 	"flag"
 	"net/url"
+	"os"
+	"path/filepath"
 
 	"gophkeeper/internal/logger"
 
@@ -17,9 +19,19 @@ type Config struct {
 	StaticPath string `env:"STATIC_PATH" json:"static_path,omitempty"` // путь до рабочей дирректории
 }
 
-func (cfg *Config) readFlags() {
+func (cfg *Config) readFlags() error {
+	dirHomeName, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	workDir := filepath.Join(dirHomeName, ".gophkeeper")
+	err = os.MkdirAll(workDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
 	address := flag.String("g", "127.0.0.1:8080", "Сетевой адрес grpc host:port")
-	staticPath := flag.String("s", "./", "Путь до файлов статики ")
+	staticPath := flag.String("s", workDir, "Путь до рабочей дирректории ")
 	flag.Parse()
 
 	if cfg.Address == "" {
@@ -28,6 +40,7 @@ func (cfg *Config) readFlags() {
 	if cfg.StaticPath == "" {
 		cfg.StaticPath = *staticPath
 	}
+	return nil
 }
 
 func (cfg *Config) readEnv() error {
@@ -60,7 +73,10 @@ func (cfg *Config) ReadConfig() bool {
 		return false
 	}
 
-	cfg.readFlags()
+	err = cfg.readFlags()
+	if err != nil {
+		return false
+	}
 
 	return cfg.checkConfig()
 }

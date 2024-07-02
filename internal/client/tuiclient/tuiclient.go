@@ -2,13 +2,12 @@
 package tuiclient
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"image"
+	"io"
 	"os"
-	"strings"
-	"syscall"
+	"path/filepath"
 
 	"gophkeeper/internal/client/configure"
 	"gophkeeper/internal/client/grpcclient"
@@ -16,7 +15,6 @@ import (
 	pb "gophkeeper/pkg/proto"
 
 	"github.com/marcusolsson/tui-go"
-	"golang.org/x/term"
 )
 
 // Form описывает структуру графического интерфейса.
@@ -24,6 +22,7 @@ type Form struct {
 	ui         tui.UI
 	listRows   *tui.List
 	gridFields *tui.Grid
+	cfg        configure.Config
 
 	nameEdit       *tui.TextEdit
 	loginEdit      *tui.TextEdit
@@ -39,9 +38,13 @@ type Form struct {
 	deleteButton *tui.Button
 	cancelButton *tui.Button
 
-	fileNameEdit  *tui.TextEdit
-	addFileButton *tui.Button
-	delFileButton *tui.Button
+	boxFile          *tui.Box
+	fileNameLabel    *tui.Label
+	fileNameEdit     *tui.TextEdit
+	addFileButton    *tui.Button
+	saveFileButton   *tui.Button
+	delFileButton    *tui.Button
+	cancelFileButton *tui.Button
 
 	statusBar *tui.StatusBar
 
@@ -49,38 +52,13 @@ type Form struct {
 	listFields *proto.ListFielsdKeepResponse
 
 	chainFocus tui.SimpleFocusChain
-}
 
-func credentials() (bool, string, string, error) {
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Print("Введите 'да' если хотите зарегистрироваться: ")
-	regText, err := reader.ReadString('\n')
-	if err != nil {
-		return false, "", "", err
-	}
-	var reg bool
-	if regText == "да" {
-		reg = true
-	}
-	fmt.Print("Введите имя пользователя: ")
-	username, err := reader.ReadString('\n')
-	if err != nil {
-		return reg, "", "", err
-	}
-
-	fmt.Print("Введите пароль: ")
-	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-	if err != nil {
-		return reg, "", "", err
-	}
-
-	password := string(bytePassword)
-	return reg, strings.TrimSpace(username), strings.TrimSpace(password), nil
+	change bool
 }
 
 // NewForm создает базовую форму.
 func (fm *Form) NewForm(cfg configure.Config) {
+	fm.cfg = cfg
 	var err error
 	formLogin := FormLogin{}
 	formLogin.NewFormLogin(cfg)
@@ -142,20 +120,24 @@ func (fm *Form) NewForm(cfg configure.Config) {
 	fm.cancelButton = tui.NewButton("  Отменить  ")
 	boxButton.Append(fm.cancelButton)
 
-	boxFile := tui.NewHBox()
+	fm.boxFile = tui.NewHBox()
+	fm.fileNameLabel = tui.NewLabel("Файл: ")
+	fm.boxFile.Append(fm.fileNameLabel)
 	fm.fileNameEdit = tui.NewTextEdit()
 	fm.fileNameEdit.SetSizePolicy(tui.Expanding, tui.Minimum)
-	boxFile.Append(fm.fileNameEdit)
-	fm.addFileButton = tui.NewButton("  Добавить файл  ")
-	boxFile.Append(fm.addFileButton)
-	fm.delFileButton = tui.NewButton("  Удалить файл  ")
-	boxFile.Append(fm.delFileButton)
+	fm.boxFile.Append(fm.fileNameEdit)
+	fm.addFileButton = tui.NewButton("  Добавить  ")
+	fm.boxFile.Append(fm.addFileButton)
+	fm.saveFileButton = tui.NewButton("  Сохранить  ")
+	fm.cancelFileButton = tui.NewButton("  Отменить  ")
+	fm.delFileButton = tui.NewButton("  Удалить  ")
+	fm.boxFile.Append(fm.delFileButton)
 
-	fieldSidebar := tui.NewVBox(gridFields, boxFile, tui.NewSpacer())
+	fieldSidebar := tui.NewVBox(gridFields, fm.boxFile, tui.NewSpacer())
 	fieldSidebar.SetBorder(true)
 	fieldSidebar.SetSizePolicy(tui.Expanding, tui.Expanding)
 
-	fm.statusBar = tui.NewStatusBar("Соединен с севревром")
+	fm.statusBar = tui.NewStatusBar("Соединен с сервером")
 
 	boxGeneral := tui.NewVBox(
 		tui.NewHBox(
@@ -181,6 +163,7 @@ func (fm *Form) NewForm(cfg configure.Config) {
 	fm.cancelButton.OnActivated(fm.cancelField)
 
 	fm.addFileButton.OnActivated(fm.addFile)
+	fm.saveFileButton.OnActivated(fm.saveFile)
 
 	fm.loadItems()
 
@@ -217,6 +200,7 @@ func (fm *Form) saveField(_ *tui.Button) {
 		CardCVC:    fm.cardCVCEdit.Text(),
 		CardDate:   fm.dataEdit.Text(),
 		CardOwner:  fm.cardOwnerEdit.Text(),
+		FileName:   fm.fileNameEdit.Text(),
 	}
 
 	tmpFieldExt := &pb.EditFieldKeepRequest{
@@ -226,11 +210,19 @@ func (fm *Form) saveField(_ *tui.Button) {
 
 	res, err := fm.cli.SaveField(tmpFieldExt)
 
-	fm.cli.Upload(context.Background(), "./client")
-
 	if err != nil {
 		fm.statusBar.SetText(err.Error())
+		return
 	}
+
+	filePath := filepath.Join(fm.cfg.StaticPath, fm.listRows.SelectedItem())
+	_, err = os.Stat(filePath)
+	if fm.fileNameEdit.Text() != "" && err == nil {
+		fm.cli.Upload(context.Background(), filePath)
+	} else {
+		fm.statusBar.SetText("Не удалось загрузить файл")
+	}
+
 	fm.listFields.Data[fm.listRows.SelectedItem()] = res.Data
 	fm.statusBar.SetText("Запись успешно сохранена")
 }
@@ -307,6 +299,7 @@ func (fm *Form) setFeld(l *tui.List) {
 	fm.cardCVCEdit.SetText(mapList.CardCVC)
 	fm.cardDateEdit.SetText(mapList.CardDate)
 	fm.cardOwnerEdit.SetText(mapList.CardOwner)
+	fm.fileNameEdit.SetText(mapList.FileName)
 }
 
 func (fm *Form) addFile(_ *tui.Button) {
@@ -314,24 +307,59 @@ func (fm *Form) addFile(_ *tui.Button) {
 		fm.statusBar.SetText("Запись не выбрана")
 		return
 	}
+	fm.boxFile.Remove(3)
+	fm.boxFile.Remove(2)
+	fm.boxFile.Append(fm.saveFileButton)
+	fm.boxFile.Append(fm.cancelFileButton)
+	fm.fileNameLabel.SetText("Укажите путь до файла: ")
+	fm.setChainFocus(1)
+}
 
-	formLogin := FormAddPath{}
-	formLogin.NewFormAddPath()
+func (fm *Form) saveFile(_ *tui.Button) {
+	if fm.listRows.Selected() < 0 {
+		fm.statusBar.SetText("Запись не выбрана")
+		return
+	}
+	_, err := os.Stat(fm.fileNameEdit.Text())
+	if err != nil {
+		fm.statusBar.SetText("Файл не существует")
+		return
+	}
 
-	// fm.setChainFocus(1)
+	srcFile, err := os.Open(fm.fileNameEdit.Text())
+	if err != nil {
+		fm.statusBar.SetText("Не удалось прочитать файл")
+		return
+	}
+	defer srcFile.Close()
 
-	// fm.statusBar.SetText(fmt.Sprintf("Изменения отменены %s", uuid))
+	destPath := filepath.Join(fm.cfg.StaticPath, fm.listRows.SelectedItem())
+
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		fm.statusBar.SetText("Не удалось записать файл")
+		return
+	}
+
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, srcFile)
+
+	_, nameFile := filepath.Split(srcFile.Name())
+	fm.fileNameEdit.SetText(nameFile)
+
+	fm.fileNameLabel.SetText("Файл: ")
+	fm.boxFile.Append(fm.addFileButton)
+	fm.boxFile.Append(fm.deleteButton)
+	fm.boxFile.Remove(3)
+	fm.boxFile.Remove(2)
+	fm.setChainFocus(0)
+	fm.statusBar.SetText("Файл добавлен")
 }
 
 func (fm *Form) setChainFocus(name int) {
 	switch name {
-	case 1:
-		fm.chainFocus.Set(
-			fm.fileNameEdit,
-			fm.addFileButton,
-		)
-		fm.ui.SetFocusChain(&fm.chainFocus)
-	default:
+	case 0:
 		fm.chainFocus.Set(
 			fm.listRows,
 			fm.nameEdit,
@@ -348,6 +376,13 @@ func (fm *Form) setChainFocus(name int) {
 			fm.saveButton,
 			fm.deleteButton,
 			fm.cancelButton,
+		)
+		fm.ui.SetFocusChain(&fm.chainFocus)
+	case 1:
+		fm.chainFocus.Set(
+			fm.fileNameEdit,
+			fm.saveFileButton,
+			fm.cancelFileButton,
 		)
 		fm.ui.SetFocusChain(&fm.chainFocus)
 	}
