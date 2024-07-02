@@ -16,6 +16,7 @@ import (
 // Config хранит текущую конфигурацию сервиса.
 type Config struct {
 	Address    string `env:"ADDRESS" json:"address,omitempty"`         // адрес сервера grpc
+	Secret     string `env:"SECRET" json:"secret,omitempty"`           // ключ шифрования
 	StaticPath string `env:"STATIC_PATH" json:"static_path,omitempty"` // путь до рабочей дирректории
 }
 
@@ -31,12 +32,18 @@ func (cfg *Config) readFlags() error {
 	}
 
 	address := flag.String("g", "127.0.0.1:8080", "Сетевой адрес grpc host:port")
-	staticPath := flag.String("s", workDir, "Путь до рабочей дирректории ")
+	secret := flag.String("s", "test", "Ключ шифрования")
+	staticPath := flag.String("w", workDir, "Путь до рабочей дирректории ")
 	flag.Parse()
 
 	if cfg.Address == "" {
 		cfg.Address = *address
 	}
+
+	if cfg.Secret == "" {
+		cfg.Secret = *secret
+	}
+
 	if cfg.StaticPath == "" {
 		cfg.StaticPath = *staticPath
 	}

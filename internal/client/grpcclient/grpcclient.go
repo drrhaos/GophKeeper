@@ -3,13 +3,17 @@ package grpcclient
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"io"
 	"os"
 	"path/filepath"
 
 	"gophkeeper/internal/client/configure"
+	"gophkeeper/internal/crypt"
 	"gophkeeper/internal/server/grpcmode"
 
+	"gophkeeper/pkg/proto"
 	pb "gophkeeper/pkg/proto"
 
 	"google.golang.org/grpc"
@@ -22,6 +26,7 @@ type GRPCClient struct {
 	client pb.GophKeeperClient
 	token  string
 	cfg    configure.Config
+	secret string
 }
 
 // Connect устанавливает соединение с сервером.
@@ -42,7 +47,16 @@ func Connect(cfg configure.Config, user string, password string) (*GRPCClient, e
 	}
 	token := res.GetToken()
 
-	return &GRPCClient{client: client, token: token, cfg: cfg}, nil
+	hash := md5.Sum([]byte(cfg.Secret))
+	secret := hex.EncodeToString(hash[:])
+
+	gClient := &GRPCClient{
+		client: client,
+		token:  token,
+		cfg:    cfg,
+		secret: secret,
+	}
+	return gClient, nil
 }
 
 // Reg регистрирует нового польщователя.
@@ -70,25 +84,63 @@ func Reg(cfg configure.Config, user string, password string) (*GRPCClient, error
 func (client *GRPCClient) GetListFields() *pb.ListFielsdKeepResponse {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	resp, err := client.client.ListFields(ctx, &pb.ListFieldsKeepRequest{})
+	respEnc, err := client.client.ListFields(ctx, &pb.ListFieldsKeepRequest{})
 	if err != nil {
 		return nil
 	}
-	return resp
+
+	respDec := &proto.ListFielsdKeepResponse{
+		Data: make(map[string]*proto.FieldKeep),
+	}
+
+	for key, ddd := range respEnc.Data {
+		respDec.GetData()[key] = crypt.DecField(ddd, client.secret)
+	}
+
+	return respDec
 }
 
 // SaveField сохранение записи на сервере.
 func (client *GRPCClient) SaveField(field *pb.EditFieldKeepRequest) (*pb.EditFieldKeepResponse, error) {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	return client.client.EditField(ctx, field)
+
+	fieldEnc := &proto.EditFieldKeepRequest{
+		Uuid: field.Uuid,
+		Data: crypt.EncField(field.Data, client.secret),
+	}
+
+	respEnc, err := client.client.EditField(ctx, fieldEnc)
+	if err != nil {
+		return nil, err
+	}
+
+	respDec := &proto.EditFieldKeepResponse{
+		Data: crypt.DecField(respEnc.GetData(), client.secret),
+	}
+
+	return respDec, nil
 }
 
 // AddField добавление записи на сервере.
 func (client *GRPCClient) AddField(field *pb.AddFieldKeepRequest) (*pb.AddFieldKeepResponse, error) {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	return client.client.AddField(ctx, field)
+
+	fieldEnc := &proto.AddFieldKeepRequest{
+		Data: crypt.EncField(field.Data, client.secret),
+	}
+
+	respEnc, err := client.client.AddField(ctx, fieldEnc)
+	if err != nil {
+		return nil, err
+	}
+
+	respDec := &proto.AddFieldKeepResponse{
+		Uuid: respEnc.Uuid,
+		Data: crypt.DecField(respEnc.GetData(), client.secret),
+	}
+	return respDec, nil
 }
 
 // DelField удаление записи на сервере.
