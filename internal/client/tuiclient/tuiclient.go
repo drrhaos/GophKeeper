@@ -47,6 +47,8 @@ type Form struct {
 
 	cli        *grpcclient.GRPCClient
 	listFields *proto.ListFielsdKeepResponse
+
+	chainFocus tui.SimpleFocusChain
 }
 
 func credentials() (bool, string, string, error) {
@@ -142,6 +144,7 @@ func (fm *Form) NewForm(cfg configure.Config) {
 
 	boxFile := tui.NewHBox()
 	fm.fileNameEdit = tui.NewTextEdit()
+	fm.fileNameEdit.SetSizePolicy(tui.Expanding, tui.Minimum)
 	boxFile.Append(fm.fileNameEdit)
 	fm.addFileButton = tui.NewButton("  Добавить файл  ")
 	boxFile.Append(fm.addFileButton)
@@ -170,26 +173,6 @@ func (fm *Form) NewForm(cfg configure.Config) {
 		panic(err)
 	}
 
-	var chainF tui.SimpleFocusChain
-	chainF.Set(
-		fm.listRows,
-		fm.nameEdit,
-		fm.loginEdit,
-		fm.passwordEdit,
-		fm.dataEdit,
-		fm.cardNumberEdit,
-		fm.cardCVCEdit,
-		fm.cardDateEdit,
-		fm.cardOwnerEdit,
-		fm.addFileButton,
-		fm.delFileButton,
-		fm.addButton,
-		fm.saveButton,
-		fm.deleteButton,
-		fm.cancelButton,
-	)
-	fm.ui.SetFocusChain(&chainF)
-
 	fm.ui.SetKeybinding("Esc", func() { fm.ui.Quit() })
 	fm.listRows.OnSelectionChanged(fm.setFeld)
 	fm.saveButton.OnActivated(fm.saveField)
@@ -205,7 +188,7 @@ func (fm *Form) NewForm(cfg configure.Config) {
 		fm.listRows.SetSelected(0)
 		fm.setFeld(fm.listRows)
 	}
-
+	fm.setChainFocus(0)
 	if err := fm.ui.Run(); err != nil {
 		panic(err)
 	}
@@ -331,6 +314,41 @@ func (fm *Form) addFile(_ *tui.Button) {
 		fm.statusBar.SetText("Запись не выбрана")
 		return
 	}
-	fm.fileNameEdit.SetFocused(true)
+
+	formLogin := FormAddPath{}
+	formLogin.NewFormAddPath()
+
+	// fm.setChainFocus(1)
+
 	// fm.statusBar.SetText(fmt.Sprintf("Изменения отменены %s", uuid))
+}
+
+func (fm *Form) setChainFocus(name int) {
+	switch name {
+	case 1:
+		fm.chainFocus.Set(
+			fm.fileNameEdit,
+			fm.addFileButton,
+		)
+		fm.ui.SetFocusChain(&fm.chainFocus)
+	default:
+		fm.chainFocus.Set(
+			fm.listRows,
+			fm.nameEdit,
+			fm.loginEdit,
+			fm.passwordEdit,
+			fm.dataEdit,
+			fm.cardNumberEdit,
+			fm.cardCVCEdit,
+			fm.cardDateEdit,
+			fm.cardOwnerEdit,
+			fm.addFileButton,
+			fm.delFileButton,
+			fm.addButton,
+			fm.saveButton,
+			fm.deleteButton,
+			fm.cancelButton,
+		)
+		fm.ui.SetFocusChain(&fm.chainFocus)
+	}
 }

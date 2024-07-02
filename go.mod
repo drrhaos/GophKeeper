@@ -24,8 +24,9 @@ require (
 require (
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/gdamore/encoding v0.0.0-20151215212835-b23993cbb635 // indirect
+	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gdamore/tcell v1.1.0 // indirect
+	github.com/gdamore/tcell/v2 v2.7.1 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -40,11 +41,13 @@ require (
 	github.com/lestrrat-go/jwx v1.1.0 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
-	github.com/lucasb-eyer/go-colorful v0.0.0-20180709185858-c7842319cf3a // indirect
-	github.com/mattn/go-runewidth v0.0.3 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rivo/tview v0.0.0-20240625185742-b0a7293b8130 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
