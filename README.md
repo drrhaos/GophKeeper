@@ -41,6 +41,8 @@ Usage of ./cmd/server/server:
 
 ## Клиент
 
+![tui](/screenshot.png?raw=true)
+
 Для сборки и запуска клиента выполните команду.
 
 ```
