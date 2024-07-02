@@ -1,6 +1,7 @@
 package tuiclient
 
 import (
+	"fmt"
 	"image"
 
 	"gophkeeper/internal/client/configure"
@@ -11,8 +12,10 @@ import (
 
 // FormLogin описывает структуру графического интерфейсаc входа пользователя.
 type FormLogin struct {
-	ui   tui.UI
-	grid *tui.Grid
+	ui           tui.UI
+	BuildVersion string
+	BuildDate    string
+	grid         *tui.Grid
 
 	loginEdit    *tui.TextEdit
 	passwordEdit *tui.TextEdit
@@ -49,7 +52,7 @@ func (fm *FormLogin) NewFormLogin(cfg configure.Config) {
 
 	fm.labelInfo = tui.NewLabel("")
 
-	sidebarList := tui.NewVBox(gridFields, fm.labelInfo, tui.NewSpacer(), boxButton)
+	sidebarList := tui.NewVBox(tui.NewLabel(fmt.Sprintf("GophKeeper версия: %s дата сборки: %s", fm.BuildVersion, fm.BuildDate)), gridFields, fm.labelInfo, tui.NewSpacer(), boxButton)
 	sidebarList.SetBorder(true)
 
 	var err error

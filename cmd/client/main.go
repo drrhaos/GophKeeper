@@ -1,3 +1,4 @@
+// Package main осуществляет запуск клиента
 package main
 
 import (
@@ -7,6 +8,11 @@ import (
 )
 
 const flagLogLevel = "info"
+
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+)
 
 func main() {
 	err := logger.Initialize(flagLogLevel)
@@ -20,7 +26,10 @@ func main() {
 		logger.Log.Panic("Error read config")
 	}
 
-	formUI := tuiclient.Form{}
+	formUI := tuiclient.Form{
+		BuildVersion: buildVersion,
+		BuildDate:    buildDate,
+	}
 
 	formUI.NewForm(cfg)
 }
