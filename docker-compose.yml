@@ -1,6 +1,22 @@
 version: '3.1'
 
 services:
+  server:
+    image: golang:1.22.4
+    hostname: web
+    restart: always
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: './cmd/server/gophkeeper -s /app/swagger-ui/'
+    env_file:
+      - .env
+    ports:
+      - $PORT:$PORT
+      - $PORT_REST:$PORT_REST
+    depends_on:
+      - db
+
   db:
     image: postgres
     hostname: db

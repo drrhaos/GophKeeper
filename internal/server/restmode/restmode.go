@@ -3,6 +3,7 @@ package restmode
 
 import (
 	"context"
+	"fmt"
 	"mime"
 	"net/http"
 	"strings"
@@ -56,7 +57,7 @@ func Run(cfg configure.Config) {
 			return metadata.New(md)
 		}))
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err := pb.RegisterGophKeeperHandlerFromEndpoint(ctx, gwmux, cfg.Address, opts)
+	err := pb.RegisterGophKeeperHandlerFromEndpoint(ctx, gwmux, fmt.Sprintf("127.0.0.1:%s", cfg.Port), opts)
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +65,7 @@ func Run(cfg configure.Config) {
 	mux.Handle("/", gwmux)
 	serveSwagger(mux, cfg)
 
-	if err := http.ListenAndServe(cfg.AddressRest, mux); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.PortRest), mux); err != nil {
 		panic(err)
 	}
 }

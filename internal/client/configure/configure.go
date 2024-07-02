@@ -51,8 +51,7 @@ func (cfg *Config) readFlags() error {
 }
 
 func (cfg *Config) readEnv() error {
-	var tmpCfg Config
-	err := env.Parse(&tmpCfg)
+	err := env.Parse(cfg)
 	if err != nil {
 		logger.Log.Warn("Не удалось найти переменные окружения", zap.Error(err))
 		return err

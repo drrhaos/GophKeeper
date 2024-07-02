@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+
 	"gophkeeper/pkg/proto"
 )
 
@@ -27,7 +28,6 @@ func EncField(dec *proto.FieldKeep, secretKey string) (enc *proto.FieldKeep) {
 
 // DecField расшифровывает данные
 func DecField(enc *proto.FieldKeep, secretKey string) (dec *proto.FieldKeep) {
-
 	dec = &proto.FieldKeep{
 		Name:       Decrypt(enc.Name, secretKey),
 		Login:      Decrypt(enc.Login, secretKey),

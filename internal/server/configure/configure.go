@@ -3,7 +3,6 @@ package configure
 
 import (
 	"flag"
-	"net/url"
 	"os"
 
 	"gophkeeper/internal/logger"
@@ -14,8 +13,8 @@ import (
 
 // Config хранит текущую конфигурацию сервиса.
 type Config struct {
-	Address     string `env:"ADDRESS" json:"address,omitempty"`           // адрес сервера grpc
-	AddressRest string `env:"ADDRESS_REST" json:"address_rest,omitempty"` // адрес сервера rest
+	Port        string `env:"PORT" json:"address,omitempty"`              // порт сервера grpc
+	PortRest    string `env:"PORT_REST" json:"address_rest,omitempty"`    // порт сервера rest
 	StaticPath  string `env:"STATIC_PATH" json:"static_path,omitempty"`   // путь до статических файлов
 	WorkPath    string `env:"WORK_PATH" json:"work_path,omitempty"`       // путьдо рабочей дирректории
 	DatabaseDsn string `env:"DATABASE_DSN" json:"database_dsn,omitempty"` // DSN базы данных
@@ -23,8 +22,8 @@ type Config struct {
 }
 
 func (cfg *Config) readFlags() {
-	address := flag.String("g", "127.0.0.1:8080", "Сетевой адрес grpc host:port")
-	addressRest := flag.String("r", "127.0.0.1:8081", "Сетевой адрес rest host:port")
+	port := flag.String("g", "8080", "Сетевой порт grpc")
+	portRest := flag.String("r", "8081", "Сетевой порт rest")
 	staticPath := flag.String("s", "../../swagger-ui/", "Путь до файлов статики ")
 	workPath := flag.String("w", "./data", "Путь до рабочей дирректории")
 	databaseDsn := flag.String("d", "",
@@ -32,12 +31,12 @@ func (cfg *Config) readFlags() {
 	secretKey := flag.String("k", "test", "Сетевой адрес host:port")
 	flag.Parse()
 
-	if cfg.Address == "" {
-		cfg.Address = *address
+	if cfg.Port == "" {
+		cfg.Port = *port
 	}
 
-	if cfg.AddressRest == "" {
-		cfg.AddressRest = *addressRest
+	if cfg.PortRest == "" {
+		cfg.PortRest = *portRest
 	}
 
 	if cfg.StaticPath == "" {
@@ -58,32 +57,26 @@ func (cfg *Config) readFlags() {
 }
 
 func (cfg *Config) readEnv() error {
-	var tmpCfg Config
-	err := env.Parse(&tmpCfg)
+	err := env.Parse(cfg)
 	if err != nil {
 		logger.Log.Warn("Не удалось найти переменные окружения", zap.Error(err))
 		return err
 	}
+
 	return nil
 }
 
 func (cfg *Config) checkConfig() bool {
-	if cfg.Address == "" {
-		cfg.Address = "127.0.0.1:8080"
+	if cfg.Port == "" {
+		cfg.Port = "8080"
 	}
 
-	if cfg.AddressRest == "" {
-		cfg.AddressRest = "127.0.0.1:8081"
+	if cfg.PortRest == "" {
+		cfg.PortRest = "8081"
 	}
 
 	err := os.MkdirAll(cfg.WorkPath, os.ModePerm)
 	if err != nil {
-		return false
-	}
-
-	_, errURL := url.ParseRequestURI("http://" + cfg.Address)
-	if errURL != nil {
-		logger.Log.Error("неверный формат адреса")
 		return false
 	}
 
@@ -98,6 +91,5 @@ func (cfg *Config) ReadConfig() bool {
 	}
 
 	cfg.readFlags()
-
 	return cfg.checkConfig()
 }

@@ -7,16 +7,19 @@ import (
 	"path/filepath"
 )
 
+// File хранит параметры файла
 type File struct {
 	FilePath   string
 	buffer     *bytes.Buffer
 	OutputFile *os.File
 }
 
+// NewFile создает новый файл
 func NewFile() *File {
 	return &File{}
 }
 
+// SetFile создает файл
 func (f *File) SetFile(fileName, path string) error {
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
@@ -31,6 +34,7 @@ func (f *File) SetFile(fileName, path string) error {
 	return nil
 }
 
+// Write хаписывает данные в файл
 func (f *File) Write(chunk []byte) error {
 	if f.OutputFile == nil {
 		return nil
@@ -39,6 +43,7 @@ func (f *File) Write(chunk []byte) error {
 	return err
 }
 
+// Close закрывает файл
 func (f *File) Close() error {
 	return f.OutputFile.Close()
 }

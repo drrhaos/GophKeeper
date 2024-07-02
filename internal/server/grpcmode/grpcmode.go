@@ -44,7 +44,7 @@ func Run(cfg configure.Config) {
 	storeKeeper := &store.StorageContext{}
 	storeKeeper.SetStorage(pg.NewDatabase(cfg.DatabaseDsn))
 
-	listen, err := net.Listen("tcp", cfg.Address)
+	listen, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.Port))
 	if err != nil {
 		log.Fatal(err)
 	}
