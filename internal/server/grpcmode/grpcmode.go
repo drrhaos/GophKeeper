@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -251,7 +252,6 @@ func (ms *GophKeeperServer) checkToken(ctx context.Context) (*UserClaims, error)
 
 // Upload загрузка файла на сервер
 func (ms *GophKeeperServer) Upload(stream pb.GophKeeper_UploadServer) error {
-
 	_, err := ms.checkToken(stream.Context())
 	if err != nil {
 		return err
@@ -286,4 +286,51 @@ func (ms *GophKeeperServer) Upload(stream pb.GophKeeper_UploadServer) error {
 	fileName := filepath.Base(file.FilePath)
 	logger.Log.Info(fmt.Sprintf("saved file: %s, size: %d", fileName, fileSize))
 	return stream.SendAndClose(&pb.FileUploadResponse{FileName: fileName, Size: fileSize})
+}
+
+// Download выгрузка файла с сервера.
+func (ms *GophKeeperServer) Download(req *pb.FileDownRequest, stream pb.GophKeeper_DownloadServer) error {
+	_, err := ms.checkToken(stream.Context())
+	if err != nil {
+		return err
+	}
+
+	fileName := req.GetFileName()
+	uuid := req.GetUuid()
+	path := filepath.Join(ms.cfg.WorkPath, uuid)
+
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	fileSize := fileInfo.Size()
+
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	var totalBytesStreamed int64
+
+	for totalBytesStreamed < fileSize {
+		shard := make([]byte, 1024)
+		bytesRead, err := f.Read(shard)
+		if err == io.EOF {
+			logger.Log.Info(fmt.Sprintf("return file: %s, size: %d", fileName, fileSize))
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if err := stream.Send(&pb.FileDownResponse{
+			Chunk: shard,
+		}); err != nil {
+			return err
+		}
+		totalBytesStreamed += int64(bytesRead)
+	}
+	return nil
 }

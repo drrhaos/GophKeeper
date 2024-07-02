@@ -312,6 +312,22 @@
         }
       }
     },
+    "gophkeeperFileDownResponse": {
+      "type": "object",
+      "properties": {
+        "fileName": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "chunk": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
     "gophkeeperFileUploadResponse": {
       "type": "object",
       "properties": {

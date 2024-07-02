@@ -8,11 +8,10 @@ import (
 	"path/filepath"
 
 	"gophkeeper/internal/client/configure"
-	"gophkeeper/internal/logger"
+	"gophkeeper/internal/server/grpcmode"
 
 	pb "gophkeeper/pkg/proto"
 
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -22,13 +21,13 @@ import (
 type GRPCClient struct {
 	client pb.GophKeeperClient
 	token  string
+	cfg    configure.Config
 }
 
 // Connect устанавливает соединение с сервером.
 func Connect(cfg configure.Config, user string, password string) (*GRPCClient, error) {
 	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		// logger.Log.Warn("Не удалось установить соединение с сервером", zap.Error(err))
 		return nil, err
 	}
 
@@ -39,19 +38,17 @@ func Connect(cfg configure.Config, user string, password string) (*GRPCClient, e
 	}
 	res, err := client.Login(context.Background(), &req)
 	if err != nil {
-		// logger.Log.Warn("Не удалось авторизоваться", zap.Error(err))
 		return nil, err
 	}
 	token := res.GetToken()
 
-	return &GRPCClient{client: client, token: token}, nil
+	return &GRPCClient{client: client, token: token, cfg: cfg}, nil
 }
 
 // Reg регистрирует нового польщователя.
 func Reg(cfg configure.Config, user string, password string) (*GRPCClient, error) {
 	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logger.Log.Warn("Не удалось установить соединение с сервером", zap.Error(err))
 		return nil, err
 	}
 
@@ -62,7 +59,6 @@ func Reg(cfg configure.Config, user string, password string) (*GRPCClient, error
 	}
 	res, err := client.Register(context.Background(), &req)
 	if err != nil {
-		logger.Log.Warn("Не удалось зарегистрироваться", zap.Error(err))
 		return nil, err
 	}
 	token := res.GetToken()
@@ -136,6 +132,42 @@ func (client *GRPCClient) Upload(ctx context.Context, filePath string) error {
 	_, err = stream.CloseAndRecv()
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+// Download загрузка файла с сервера.
+func (client *GRPCClient) Download(ctx context.Context, uuid string, fileName string) error {
+	md := metadata.New(map[string]string{"Authorization": client.token})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	stream, err := client.client.Download(ctx, &pb.FileDownRequest{Uuid: uuid, FileName: fileName})
+	if err != nil {
+		return err
+	}
+
+	file := grpcmode.NewFile()
+	var fileSize uint32
+	fileSize = 0
+	defer func() {
+		file.Close()
+	}()
+	for {
+		req, err := stream.Recv()
+		if file.FilePath == "" {
+			file.SetFile(uuid, client.cfg.StaticPath)
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		chunk := req.GetChunk()
+		fileSize += uint32(len(chunk))
+		if err := file.Write(chunk); err != nil {
+			return err
+		}
 	}
 	return nil
 }

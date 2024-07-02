@@ -38,13 +38,16 @@ type Form struct {
 	deleteButton *tui.Button
 	cancelButton *tui.Button
 
-	boxFile          *tui.Box
-	fileNameLabel    *tui.Label
-	fileNameEdit     *tui.TextEdit
-	addFileButton    *tui.Button
-	saveFileButton   *tui.Button
-	delFileButton    *tui.Button
-	cancelFileButton *tui.Button
+	boxFile        *tui.Box
+	fileNameLabel  *tui.Label
+	fileNameEdit   *tui.TextEdit
+	addFileButton  *tui.Button
+	delFileButton  *tui.Button
+	loadFileButton *tui.Button
+
+	saveFileButton     *tui.Button
+	cancelFileButton   *tui.Button
+	saveLoadFileButton *tui.Button
 
 	statusBar *tui.StatusBar
 
@@ -130,8 +133,12 @@ func (fm *Form) NewForm(cfg configure.Config) {
 	fm.boxFile.Append(fm.addFileButton)
 	fm.saveFileButton = tui.NewButton("  Сохранить  ")
 	fm.cancelFileButton = tui.NewButton("  Отменить  ")
+
+	fm.saveLoadFileButton = tui.NewButton("  Сохранить  ")
 	fm.delFileButton = tui.NewButton("  Удалить  ")
 	fm.boxFile.Append(fm.delFileButton)
+	fm.loadFileButton = tui.NewButton("  Скачать  ")
+	fm.boxFile.Append(fm.loadFileButton)
 
 	fieldSidebar := tui.NewVBox(gridFields, fm.boxFile, tui.NewSpacer())
 	fieldSidebar.SetBorder(true)
@@ -164,6 +171,8 @@ func (fm *Form) NewForm(cfg configure.Config) {
 
 	fm.addFileButton.OnActivated(fm.addFile)
 	fm.saveFileButton.OnActivated(fm.saveFile)
+	fm.loadFileButton.OnActivated(fm.loadFile)
+	fm.saveLoadFileButton.OnActivated(fm.saveLoadFile)
 
 	fm.loadItems()
 
@@ -209,7 +218,6 @@ func (fm *Form) saveField(_ *tui.Button) {
 	}
 
 	res, err := fm.cli.SaveField(tmpFieldExt)
-
 	if err != nil {
 		fm.statusBar.SetText(err.Error())
 		return
@@ -307,6 +315,7 @@ func (fm *Form) addFile(_ *tui.Button) {
 		fm.statusBar.SetText("Запись не выбрана")
 		return
 	}
+	fm.boxFile.Remove(4)
 	fm.boxFile.Remove(3)
 	fm.boxFile.Remove(2)
 	fm.boxFile.Append(fm.saveFileButton)
@@ -350,11 +359,67 @@ func (fm *Form) saveFile(_ *tui.Button) {
 
 	fm.fileNameLabel.SetText("Файл: ")
 	fm.boxFile.Append(fm.addFileButton)
-	fm.boxFile.Append(fm.deleteButton)
+	fm.boxFile.Append(fm.delFileButton)
+	fm.boxFile.Append(fm.loadFileButton)
 	fm.boxFile.Remove(3)
 	fm.boxFile.Remove(2)
 	fm.setChainFocus(0)
 	fm.statusBar.SetText("Файл добавлен")
+}
+
+func (fm *Form) loadFile(_ *tui.Button) {
+	if fm.listRows.Selected() < 0 {
+		fm.statusBar.SetText("Запись не выбрана")
+		return
+	}
+	fm.boxFile.Remove(4)
+	fm.boxFile.Remove(3)
+	fm.boxFile.Remove(2)
+	fm.boxFile.Append(fm.saveLoadFileButton)
+	fm.boxFile.Append(fm.cancelFileButton)
+	fm.fileNameLabel.SetText("Укажите путь для сохранения файла: ")
+	fm.setChainFocus(2)
+}
+
+func (fm *Form) saveLoadFile(_ *tui.Button) {
+	if fm.listRows.Selected() < 0 {
+		fm.statusBar.SetText("Запись не выбрана")
+		return
+	}
+	uuid := fm.listRows.SelectedItem()
+	err := fm.cli.Download(context.Background(), uuid, fm.listFields.GetData()[uuid].FileName)
+	if err != nil {
+		fm.statusBar.SetText(err.Error())
+		return
+	}
+
+	srcFile, err := os.Open(filepath.Join(fm.cfg.StaticPath, uuid))
+	if err != nil {
+		fm.statusBar.SetText("Не удалось прочитать файл")
+		return
+	}
+	defer srcFile.Close()
+
+	destPath := filepath.Join(fm.fileNameEdit.Text())
+
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		fm.statusBar.SetText("Не удалось записать файл")
+		return
+	}
+
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, srcFile)
+
+	fm.fileNameLabel.SetText("Файл: ")
+	fm.boxFile.Remove(3)
+	fm.boxFile.Remove(2)
+	fm.boxFile.Append(fm.addFileButton)
+	fm.boxFile.Append(fm.delFileButton)
+	fm.boxFile.Append(fm.loadFileButton)
+	fm.setChainFocus(0)
+	fm.statusBar.SetText("Файл сохранен")
 }
 
 func (fm *Form) setChainFocus(name int) {
@@ -372,18 +437,24 @@ func (fm *Form) setChainFocus(name int) {
 			fm.cardOwnerEdit,
 			fm.addFileButton,
 			fm.delFileButton,
+			fm.loadFileButton,
 			fm.addButton,
 			fm.saveButton,
 			fm.deleteButton,
 			fm.cancelButton,
 		)
-		fm.ui.SetFocusChain(&fm.chainFocus)
 	case 1:
 		fm.chainFocus.Set(
 			fm.fileNameEdit,
 			fm.saveFileButton,
 			fm.cancelFileButton,
 		)
-		fm.ui.SetFocusChain(&fm.chainFocus)
+	case 2:
+		fm.chainFocus.Set(
+			fm.fileNameEdit,
+			fm.saveLoadFileButton,
+			fm.cancelFileButton,
+		)
 	}
+	fm.ui.SetFocusChain(&fm.chainFocus)
 }

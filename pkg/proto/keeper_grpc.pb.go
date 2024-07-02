@@ -8,6 +8,7 @@ package proto
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -26,6 +27,7 @@ const (
 	GophKeeper_DelField_FullMethodName   = "/gophkeeper.GophKeeper/DelField"
 	GophKeeper_ListFields_FullMethodName = "/gophkeeper.GophKeeper/ListFields"
 	GophKeeper_Upload_FullMethodName     = "/gophkeeper.GophKeeper/Upload"
+	GophKeeper_Download_FullMethodName   = "/gophkeeper.GophKeeper/Download"
 )
 
 // GophKeeperClient is the client API for GophKeeper service.
@@ -39,6 +41,7 @@ type GophKeeperClient interface {
 	DelField(ctx context.Context, in *DeleteFieldKeepRequest, opts ...grpc.CallOption) (*DeleteFieldKeepResponse, error)
 	ListFields(ctx context.Context, in *ListFieldsKeepRequest, opts ...grpc.CallOption) (*ListFielsdKeepResponse, error)
 	Upload(ctx context.Context, opts ...grpc.CallOption) (GophKeeper_UploadClient, error)
+	Download(ctx context.Context, in *FileDownRequest, opts ...grpc.CallOption) (GophKeeper_DownloadClient, error)
 }
 
 type gophKeeperClient struct {
@@ -144,6 +147,39 @@ func (x *gophKeeperUploadClient) CloseAndRecv() (*FileUploadResponse, error) {
 	return m, nil
 }
 
+func (c *gophKeeperClient) Download(ctx context.Context, in *FileDownRequest, opts ...grpc.CallOption) (GophKeeper_DownloadClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GophKeeper_ServiceDesc.Streams[1], GophKeeper_Download_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gophKeeperDownloadClient{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GophKeeper_DownloadClient interface {
+	Recv() (*FileDownResponse, error)
+	grpc.ClientStream
+}
+
+type gophKeeperDownloadClient struct {
+	grpc.ClientStream
+}
+
+func (x *gophKeeperDownloadClient) Recv() (*FileDownResponse, error) {
+	m := new(FileDownResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GophKeeperServer is the server API for GophKeeper service.
 // All implementations must embed UnimplementedGophKeeperServer
 // for forward compatibility
@@ -155,6 +191,7 @@ type GophKeeperServer interface {
 	DelField(context.Context, *DeleteFieldKeepRequest) (*DeleteFieldKeepResponse, error)
 	ListFields(context.Context, *ListFieldsKeepRequest) (*ListFielsdKeepResponse, error)
 	Upload(GophKeeper_UploadServer) error
+	Download(*FileDownRequest, GophKeeper_DownloadServer) error
 	mustEmbedUnimplementedGophKeeperServer()
 }
 
@@ -182,6 +219,9 @@ func (UnimplementedGophKeeperServer) ListFields(context.Context, *ListFieldsKeep
 }
 func (UnimplementedGophKeeperServer) Upload(GophKeeper_UploadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Upload not implemented")
+}
+func (UnimplementedGophKeeperServer) Download(*FileDownRequest, GophKeeper_DownloadServer) error {
+	return status.Errorf(codes.Unimplemented, "method Download not implemented")
 }
 func (UnimplementedGophKeeperServer) mustEmbedUnimplementedGophKeeperServer() {}
 
@@ -330,6 +370,27 @@ func (x *gophKeeperUploadServer) Recv() (*FileUploadRequest, error) {
 	return m, nil
 }
 
+func _GophKeeper_Download_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FileDownRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GophKeeperServer).Download(m, &gophKeeperDownloadServer{ServerStream: stream})
+}
+
+type GophKeeper_DownloadServer interface {
+	Send(*FileDownResponse) error
+	grpc.ServerStream
+}
+
+type gophKeeperDownloadServer struct {
+	grpc.ServerStream
+}
+
+func (x *gophKeeperDownloadServer) Send(m *FileDownResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GophKeeper_ServiceDesc is the grpc.ServiceDesc for GophKeeper service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -367,6 +428,11 @@ var GophKeeper_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "Upload",
 			Handler:       _GophKeeper_Upload_Handler,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "Download",
+			Handler:       _GophKeeper_Download_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "keeper.proto",

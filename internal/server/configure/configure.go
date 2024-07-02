@@ -23,7 +23,6 @@ type Config struct {
 }
 
 func (cfg *Config) readFlags() {
-
 	address := flag.String("g", "127.0.0.1:8080", "Сетевой адрес grpc host:port")
 	addressRest := flag.String("r", "127.0.0.1:8081", "Сетевой адрес rest host:port")
 	staticPath := flag.String("s", "../../swagger-ui/", "Путь до файлов статики ")

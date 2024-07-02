@@ -109,8 +109,20 @@ message FileUploadRequest {
 }
 
 message FileUploadResponse {
-  string file_name = 1;
-  uint32 size = 2;
+    string file_name = 1;
+    uint32 size = 2;
+}
+
+
+message FileDownRequest {
+    string uuid = 1;
+    string file_name = 2;
+}
+
+message FileDownResponse {
+    string file_name = 1;
+    uint32 size = 2;
+    bytes chunk = 3;
 }
 
 service GophKeeper {
@@ -184,4 +196,5 @@ service GophKeeper {
         };
     };
     rpc Upload(stream FileUploadRequest) returns(FileUploadResponse);
+    rpc Download(FileDownRequest) returns(stream FileDownResponse);
 }
