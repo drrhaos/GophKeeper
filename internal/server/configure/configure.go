@@ -72,11 +72,8 @@ func (cfg *Config) checkConfig() bool {
 	}
 
 	err := os.MkdirAll(cfg.WorkPath, os.ModePerm)
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 // ReadConfig читает конфигурацию сервера
