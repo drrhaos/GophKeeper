@@ -242,10 +242,16 @@ func (fm *Form) saveField(_ *tui.Button) {
 
 	filePath := filepath.Join(fm.cfg.StaticPath, fm.listRows.SelectedItem())
 	_, err = os.Stat(filePath)
+	if err != nil {
+		fm.statusBar.SetText("Файл не существует")
+		return
+	}
+
 	if fm.fileNameEdit.Text() != "" && err == nil {
 		fm.cli.Upload(context.Background(), filePath)
 	} else {
 		fm.statusBar.SetText("Не удалось загрузить файл")
+		return
 	}
 
 	fm.listFields.Data[fm.listRows.SelectedItem()] = res.Data
@@ -442,7 +448,7 @@ func (fm *Form) saveLoadFile(_ *tui.Button) {
 	}
 	defer srcFile.Close()
 
-	destPath := filepath.Join(fm.fileNameEdit.Text())
+	destPath := fm.fileNameEdit.Text()
 
 	destFile, err := os.Create(destPath)
 	if err != nil {
