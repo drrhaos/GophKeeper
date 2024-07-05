@@ -12,7 +12,6 @@ import (
 	"gophkeeper/internal/client/configure"
 	"gophkeeper/internal/client/grpcclient"
 	"gophkeeper/pkg/proto"
-	pb "gophkeeper/pkg/proto"
 
 	"github.com/marcusolsson/tui-go"
 )
@@ -218,7 +217,7 @@ func (fm *Form) saveField(_ *tui.Button) {
 		return
 	}
 
-	tmpFieldKeep := pb.FieldKeep{
+	tmpFieldKeep := proto.FieldKeep{
 		Name:       fm.nameEdit.Text(),
 		Login:      fm.loginEdit.Text(),
 		Password:   fm.passwordEdit.Text(),
@@ -230,7 +229,7 @@ func (fm *Form) saveField(_ *tui.Button) {
 		FileName:   fm.fileNameEdit.Text(),
 	}
 
-	tmpFieldExt := &pb.EditFieldKeepRequest{
+	tmpFieldExt := &proto.EditFieldKeepRequest{
 		Uuid: fm.listRows.SelectedItem(),
 		Data: &tmpFieldKeep,
 	}
@@ -261,9 +260,9 @@ func (fm *Form) addField(_ *tui.Button) {
 		fm.statusBar.SetText("Сохраните изменения")
 		return
 	}
-	tmpFieldKeep := pb.FieldKeep{}
+	tmpFieldKeep := proto.FieldKeep{}
 
-	tmpField := &pb.AddFieldKeepRequest{
+	tmpField := &proto.AddFieldKeepRequest{
 		Data: &tmpFieldKeep,
 	}
 
@@ -295,7 +294,7 @@ func (fm *Form) deleteField(_ *tui.Button) {
 		return
 	}
 
-	tmpField := &pb.DeleteFieldKeepRequest{
+	tmpField := &proto.DeleteFieldKeepRequest{
 		Uuid: fm.listRows.SelectedItem(),
 	}
 

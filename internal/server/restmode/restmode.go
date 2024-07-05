@@ -10,7 +10,7 @@ import (
 
 	"gophkeeper/internal/server/configure"
 
-	pb "gophkeeper/pkg/proto"
+	"gophkeeper/pkg/proto"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -57,7 +57,7 @@ func Run(cfg configure.Config) {
 			return metadata.New(md)
 		}))
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	err := pb.RegisterGophKeeperHandlerFromEndpoint(ctx, gwmux, fmt.Sprintf("127.0.0.1:%s", cfg.Port), opts)
+	err := proto.RegisterGophKeeperHandlerFromEndpoint(ctx, gwmux, fmt.Sprintf("127.0.0.1:%s", cfg.Port), opts)
 	if err != nil {
 		panic(err)
 	}

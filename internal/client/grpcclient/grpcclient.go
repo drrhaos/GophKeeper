@@ -14,7 +14,6 @@ import (
 	"gophkeeper/internal/server/grpcmode"
 
 	"gophkeeper/pkg/proto"
-	pb "gophkeeper/pkg/proto"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,7 +22,7 @@ import (
 
 // GRPCClient хранит соединение с сервером.
 type GRPCClient struct {
-	client pb.GophKeeperClient
+	client proto.GophKeeperClient
 	token  string
 	cfg    configure.Config
 	secret string
@@ -36,8 +35,8 @@ func Connect(cfg configure.Config, user string, password string) (*GRPCClient, e
 		return nil, err
 	}
 
-	client := pb.NewGophKeeperClient(conn)
-	req := pb.LoginRequest{
+	client := proto.NewGophKeeperClient(conn)
+	req := proto.LoginRequest{
 		Login:    user,
 		Password: password,
 	}
@@ -66,8 +65,8 @@ func Reg(cfg configure.Config, user string, password string) (*GRPCClient, error
 		return nil, err
 	}
 
-	client := pb.NewGophKeeperClient(conn)
-	req := pb.RegisterRequest{
+	client := proto.NewGophKeeperClient(conn)
+	req := proto.RegisterRequest{
 		Login:    user,
 		Password: password,
 	}
@@ -81,10 +80,10 @@ func Reg(cfg configure.Config, user string, password string) (*GRPCClient, error
 }
 
 // GetListFields получает с сервера список запсисей.
-func (client *GRPCClient) GetListFields() *pb.ListFielsdKeepResponse {
+func (client *GRPCClient) GetListFields() *proto.ListFielsdKeepResponse {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	respEnc, err := client.client.ListFields(ctx, &pb.ListFieldsKeepRequest{})
+	respEnc, err := client.client.ListFields(ctx, &proto.ListFieldsKeepRequest{})
 	if err != nil {
 		return nil
 	}
@@ -101,7 +100,7 @@ func (client *GRPCClient) GetListFields() *pb.ListFielsdKeepResponse {
 }
 
 // SaveField сохранение записи на сервере.
-func (client *GRPCClient) SaveField(field *pb.EditFieldKeepRequest) (*pb.EditFieldKeepResponse, error) {
+func (client *GRPCClient) SaveField(field *proto.EditFieldKeepRequest) (*proto.EditFieldKeepResponse, error) {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
@@ -123,7 +122,7 @@ func (client *GRPCClient) SaveField(field *pb.EditFieldKeepRequest) (*pb.EditFie
 }
 
 // AddField добавление записи на сервере.
-func (client *GRPCClient) AddField(field *pb.AddFieldKeepRequest) (*pb.AddFieldKeepResponse, error) {
+func (client *GRPCClient) AddField(field *proto.AddFieldKeepRequest) (*proto.AddFieldKeepResponse, error) {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
@@ -144,7 +143,7 @@ func (client *GRPCClient) AddField(field *pb.AddFieldKeepRequest) (*pb.AddFieldK
 }
 
 // DelField удаление записи на сервере.
-func (client *GRPCClient) DelField(field *pb.DeleteFieldKeepRequest) (*pb.DeleteFieldKeepResponse, error) {
+func (client *GRPCClient) DelField(field *proto.DeleteFieldKeepRequest) (*proto.DeleteFieldKeepResponse, error) {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	return client.client.DelField(ctx, field)
@@ -175,7 +174,7 @@ func (client *GRPCClient) Upload(ctx context.Context, filePath string) error {
 		}
 		chunk := buf[:num]
 
-		if err := stream.Send(&pb.FileUploadRequest{FileName: filepath.Base(filePath), Chunk: chunk}); err != nil {
+		if err := stream.Send(&proto.FileUploadRequest{FileName: filepath.Base(filePath), Chunk: chunk}); err != nil {
 			return err
 		}
 		batchNumber++
@@ -193,7 +192,7 @@ func (client *GRPCClient) Download(ctx context.Context, uuid string, fileName st
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
-	stream, err := client.client.Download(ctx, &pb.FileDownRequest{Uuid: uuid, FileName: fileName})
+	stream, err := client.client.Download(ctx, &proto.FileDownRequest{Uuid: uuid, FileName: fileName})
 	if err != nil {
 		return err
 	}

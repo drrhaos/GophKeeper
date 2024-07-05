@@ -2,9 +2,10 @@
 package crypt
 
 import (
-	"gophkeeper/pkg/proto"
 	"reflect"
 	"testing"
+
+	"gophkeeper/pkg/proto"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -68,7 +69,6 @@ func TestDecField(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotDec := DecField(tt.args.enc, tt.args.secretKey); !reflect.DeepEqual(gotDec, tt.wantDec) {
 				assert.Equal(t, "", gotDec.Name)
-
 			}
 		})
 	}

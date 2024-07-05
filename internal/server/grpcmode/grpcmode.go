@@ -17,7 +17,7 @@ import (
 	"gophkeeper/internal/store"
 	"gophkeeper/internal/store/pg"
 
-	pb "gophkeeper/pkg/proto"
+	"gophkeeper/pkg/proto"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/jwtauth"
@@ -57,7 +57,7 @@ func Run(cfg configure.Config) {
 		storage: storeKeeper,
 		cfg:     cfg,
 	}
-	pb.RegisterGophKeeperServer(s, &metricsServer)
+	proto.RegisterGophKeeperServer(s, &metricsServer)
 
 	// получаем запрос gRPC
 	if err := s.Serve(listen); err != nil {
@@ -67,15 +67,15 @@ func Run(cfg configure.Config) {
 
 // GophKeeperServer поддерживает все необходимые методы сервера.
 type GophKeeperServer struct {
-	pb.UnimplementedGophKeeperServer
+	proto.UnimplementedGophKeeperServer
 
 	storage *store.StorageContext
 	cfg     configure.Config
 }
 
 // Register регистрирует нового пользователя.
-func (ms *GophKeeperServer) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	var response pb.RegisterResponse
+func (ms *GophKeeperServer) Register(ctx context.Context, in *proto.RegisterRequest) (*proto.RegisterResponse, error) {
+	var response proto.RegisterResponse
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -113,8 +113,8 @@ func (ms *GophKeeperServer) Register(ctx context.Context, in *pb.RegisterRequest
 }
 
 // Login аутентифицирует нового пользователя.
-func (ms *GophKeeperServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
-	var response pb.LoginResponse
+func (ms *GophKeeperServer) Login(ctx context.Context, in *proto.LoginRequest) (*proto.LoginResponse, error) {
+	var response proto.LoginResponse
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -151,8 +151,8 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *pb.LoginRequest) (*pb
 }
 
 // AddField добавдяет запись в хранилище.
-func (ms *GophKeeperServer) AddField(ctx context.Context, in *pb.AddFieldKeepRequest) (*pb.AddFieldKeepResponse, error) {
-	var response pb.AddFieldKeepResponse
+func (ms *GophKeeperServer) AddField(ctx context.Context, in *proto.AddFieldKeepRequest) (*proto.AddFieldKeepResponse, error) {
+	var response proto.AddFieldKeepResponse
 
 	claims, err := ms.checkToken(ctx)
 	if err != nil {
@@ -171,8 +171,8 @@ func (ms *GophKeeperServer) AddField(ctx context.Context, in *pb.AddFieldKeepReq
 }
 
 // EditField изменяет запись в хранилище.
-func (ms *GophKeeperServer) EditField(ctx context.Context, in *pb.EditFieldKeepRequest) (*pb.EditFieldKeepResponse, error) {
-	var response pb.EditFieldKeepResponse
+func (ms *GophKeeperServer) EditField(ctx context.Context, in *proto.EditFieldKeepRequest) (*proto.EditFieldKeepResponse, error) {
+	var response proto.EditFieldKeepResponse
 	claims, err := ms.checkToken(ctx)
 	if err != nil {
 		return &response, err
@@ -188,8 +188,8 @@ func (ms *GophKeeperServer) EditField(ctx context.Context, in *pb.EditFieldKeepR
 }
 
 // DelField удаляет запись из хранилища.
-func (ms *GophKeeperServer) DelField(ctx context.Context, in *pb.DeleteFieldKeepRequest) (*pb.DeleteFieldKeepResponse, error) {
-	var response pb.DeleteFieldKeepResponse
+func (ms *GophKeeperServer) DelField(ctx context.Context, in *proto.DeleteFieldKeepRequest) (*proto.DeleteFieldKeepResponse, error) {
+	var response proto.DeleteFieldKeepResponse
 	claims, err := ms.checkToken(ctx)
 	if err != nil {
 		return &response, err
@@ -206,8 +206,8 @@ func (ms *GophKeeperServer) DelField(ctx context.Context, in *pb.DeleteFieldKeep
 }
 
 // ListFields возвращает список записей.
-func (ms *GophKeeperServer) ListFields(ctx context.Context, _ *pb.ListFieldsKeepRequest) (*pb.ListFielsdKeepResponse, error) {
-	var response *pb.ListFielsdKeepResponse
+func (ms *GophKeeperServer) ListFields(ctx context.Context, _ *proto.ListFieldsKeepRequest) (*proto.ListFielsdKeepResponse, error) {
+	var response *proto.ListFielsdKeepResponse
 	claims, err := ms.checkToken(ctx)
 	if err != nil {
 		return response, err
@@ -251,7 +251,7 @@ func (ms *GophKeeperServer) checkToken(ctx context.Context) (*UserClaims, error)
 }
 
 // Upload загрузка файла на сервер
-func (ms *GophKeeperServer) Upload(stream pb.GophKeeper_UploadServer) error {
+func (ms *GophKeeperServer) Upload(stream proto.GophKeeper_UploadServer) error {
 	_, err := ms.checkToken(stream.Context())
 	if err != nil {
 		return err
@@ -285,11 +285,11 @@ func (ms *GophKeeperServer) Upload(stream pb.GophKeeper_UploadServer) error {
 	}
 	fileName := filepath.Base(file.FilePath)
 	logger.Log.Info(fmt.Sprintf("saved file: %s, size: %d", fileName, fileSize))
-	return stream.SendAndClose(&pb.FileUploadResponse{FileName: fileName, Size: fileSize})
+	return stream.SendAndClose(&proto.FileUploadResponse{FileName: fileName, Size: fileSize})
 }
 
 // Download выгрузка файла с сервера.
-func (ms *GophKeeperServer) Download(req *pb.FileDownRequest, stream pb.GophKeeper_DownloadServer) error {
+func (ms *GophKeeperServer) Download(req *proto.FileDownRequest, stream proto.GophKeeper_DownloadServer) error {
 	_, err := ms.checkToken(stream.Context())
 	if err != nil {
 		return err
@@ -325,7 +325,7 @@ func (ms *GophKeeperServer) Download(req *pb.FileDownRequest, stream pb.GophKeep
 			return err
 		}
 
-		if err := stream.Send(&pb.FileDownResponse{
+		if err := stream.Send(&proto.FileDownResponse{
 			Chunk: shard,
 		}); err != nil {
 			return err
