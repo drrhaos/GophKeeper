@@ -409,13 +409,17 @@ func (fm *Form) saveLoadFile(_ *tui.Button) {
 
 	destFile, err := os.Create(destPath)
 	if err != nil {
-		fm.statusBar.SetText("Не удалось записать файл")
+		fm.statusBar.SetText("Не удалось создать файл")
 		return
 	}
 
 	defer destFile.Close()
 
 	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		fm.statusBar.SetText("Не удалось скопировать файл")
+		return
+	}
 
 	fm.fileNameLabel.SetText("Файл: ")
 	fm.boxFile.Remove(3)
