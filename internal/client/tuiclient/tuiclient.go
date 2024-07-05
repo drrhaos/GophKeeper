@@ -19,12 +19,10 @@ import (
 
 // Form описывает структуру графического интерфейса.
 type Form struct {
-	ui           tui.UI
-	BuildVersion string
-	BuildDate    string
-	listRows     *tui.List
-	gridFields   *tui.Grid
-	cfg          configure.Config
+	ui         tui.UI
+	listRows   *tui.List
+	gridFields *tui.Grid
+	cfg        configure.Config
 
 	statusField    *tui.Label
 	nameEdit       *tui.TextEdit
@@ -63,14 +61,11 @@ type Form struct {
 }
 
 // NewForm создает базовую форму.
-func (fm *Form) NewForm(cfg configure.Config) {
+func (fm *Form) NewForm(cfg configure.Config, buildVersion string, buildDate string) {
 	fm.cfg = cfg
 	var err error
-	formLogin := FormLogin{
-		BuildVersion: fm.BuildVersion,
-		BuildDate:    fm.BuildDate,
-	}
-	formLogin.NewFormLogin(cfg)
+	formLogin := FormLogin{}
+	formLogin.NewFormLogin(cfg, buildVersion, buildDate)
 	if formLogin.Cli == nil {
 		return
 	}
