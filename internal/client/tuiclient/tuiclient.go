@@ -26,6 +26,7 @@ type Form struct {
 	gridFields   *tui.Grid
 	cfg          configure.Config
 
+	statusField    *tui.Label
 	nameEdit       *tui.TextEdit
 	loginEdit      *tui.TextEdit
 	passwordEdit   *tui.TextEdit
@@ -76,6 +77,8 @@ func (fm *Form) NewForm(cfg configure.Config) {
 	fm.cli = formLogin.Cli
 
 	fm.listRows = tui.NewList()
+
+	fm.statusField = tui.NewLabel("")
 
 	gridFields := tui.NewGrid(2, 8)
 	gridFields.SetBorder(true)
@@ -151,13 +154,15 @@ func (fm *Form) NewForm(cfg configure.Config) {
 
 	fm.statusBar = tui.NewStatusBar("Соединен с сервером")
 
+	fieldBox := tui.NewVBox(fm.statusField,
+		fieldSidebar,
+		boxButton,
+	)
+	fieldBox.SetBorder(true)
 	boxGeneral := tui.NewVBox(
 		tui.NewHBox(
 			sidebarList,
-			tui.NewVBox(
-				fieldSidebar,
-				boxButton,
-			),
+			fieldBox,
 		),
 		fm.statusBar,
 	)
@@ -168,7 +173,11 @@ func (fm *Form) NewForm(cfg configure.Config) {
 	}
 
 	fm.ui.SetKeybinding("Esc", func() { fm.ui.Quit() })
+	fm.ui.SetKeybinding("Up", fm.upList)
+	fm.ui.SetKeybinding("Down", fm.downList)
+
 	fm.listRows.OnSelectionChanged(fm.setFeld)
+
 	fm.saveButton.OnActivated(fm.saveField)
 	fm.addButton.OnActivated(fm.addField)
 	fm.deleteButton.OnActivated(fm.deleteField)
@@ -178,6 +187,15 @@ func (fm *Form) NewForm(cfg configure.Config) {
 	fm.saveFileButton.OnActivated(fm.saveFile)
 	fm.loadFileButton.OnActivated(fm.loadFile)
 	fm.saveLoadFileButton.OnActivated(fm.saveLoadFile)
+
+	fm.nameEdit.OnTextChanged(fm.setChanged)
+	fm.loginEdit.OnTextChanged(fm.setChanged)
+	fm.passwordEdit.OnTextChanged(fm.setChanged)
+	fm.dataEdit.OnTextChanged(fm.setChanged)
+	fm.cardNumberEdit.OnTextChanged(fm.setChanged)
+	fm.cardCVCEdit.OnTextChanged(fm.setChanged)
+	fm.cardDateEdit.OnTextChanged(fm.setChanged)
+	fm.cardOwnerEdit.OnTextChanged(fm.setChanged)
 
 	fm.loadItems()
 
@@ -237,10 +255,17 @@ func (fm *Form) saveField(_ *tui.Button) {
 	}
 
 	fm.listFields.Data[fm.listRows.SelectedItem()] = res.Data
+
+	fm.change = false
+	fm.statusField.SetText("")
 	fm.statusBar.SetText("Запись успешно сохранена")
 }
 
 func (fm *Form) addField(_ *tui.Button) {
+	if fm.change {
+		fm.statusBar.SetText("Сохраните изменения")
+		return
+	}
 	tmpFieldKeep := pb.FieldKeep{}
 
 	tmpField := &pb.AddFieldKeepRequest{
@@ -260,10 +285,16 @@ func (fm *Form) addField(_ *tui.Button) {
 		}
 		i++
 	}
+	fm.change = false
+	fm.statusField.SetText("")
 	fm.statusBar.SetText(fmt.Sprintf("Запись успешно добавлена %s", res.GetUuid()))
 }
 
 func (fm *Form) deleteField(_ *tui.Button) {
+	if fm.change {
+		fm.statusBar.SetText("Сохраните изменения")
+		return
+	}
 	if fm.listRows.Selected() < 0 {
 		fm.statusBar.SetText("Запись не выбрана")
 		return
@@ -287,6 +318,9 @@ func (fm *Form) deleteField(_ *tui.Button) {
 }
 
 func (fm *Form) cancelField(_ *tui.Button) {
+	if !fm.change {
+		return
+	}
 	if fm.listRows.Selected() < 0 {
 		fm.statusBar.SetText("Запись не выбрана")
 		return
@@ -297,9 +331,16 @@ func (fm *Form) cancelField(_ *tui.Button) {
 	fm.loadItems()
 	fm.listRows.Select(id)
 	fm.statusBar.SetText(fmt.Sprintf("Изменения отменены %s", uuid))
+
+	fm.change = false
+	fm.statusField.SetText("")
 }
 
 func (fm *Form) setFeld(l *tui.List) {
+	if fm.change {
+		return
+	}
+
 	if l.Length() == 0 {
 		return
 	}
@@ -370,6 +411,8 @@ func (fm *Form) saveFile(_ *tui.Button) {
 	fm.boxFile.Remove(2)
 	fm.setChainFocus(0)
 	fm.statusBar.SetText("Файл добавлен")
+	fm.setChainFocus(4)
+	fm.change = true
 }
 
 func (fm *Form) loadFile(_ *tui.Button) {
@@ -435,7 +478,6 @@ func (fm *Form) setChainFocus(name int) {
 	switch name {
 	case 0:
 		fm.chainFocus.Set(
-			fm.listRows,
 			fm.nameEdit,
 			fm.loginEdit,
 			fm.passwordEdit,
@@ -464,6 +506,51 @@ func (fm *Form) setChainFocus(name int) {
 			fm.saveLoadFileButton,
 			fm.cancelFileButton,
 		)
+	case 4:
+		fm.chainFocus.Set(
+			fm.nameEdit,
+			fm.loginEdit,
+			fm.passwordEdit,
+			fm.dataEdit,
+			fm.cardNumberEdit,
+			fm.cardCVCEdit,
+			fm.cardDateEdit,
+			fm.cardOwnerEdit,
+			fm.addFileButton,
+			fm.delFileButton,
+			fm.loadFileButton,
+			fm.saveButton,
+			fm.cancelButton,
+		)
 	}
 	fm.ui.SetFocusChain(&fm.chainFocus)
+}
+
+func (fm *Form) setChanged(_ *tui.TextEdit) {
+	if fm.change == false {
+		fm.change = true
+		fm.statusField.SetText("* Запись изменена. Сохраните запись или отмените изменения.")
+	}
+}
+
+func (fm *Form) upList() {
+	if fm.change {
+		return
+	}
+	if fm.listRows.Selected() > 0 {
+		fm.listRows.Select(fm.listRows.Selected() - 1)
+	} else {
+		fm.listRows.Select(fm.listRows.Length() - 1)
+	}
+}
+
+func (fm *Form) downList() {
+	if fm.change {
+		return
+	}
+	if fm.listRows.Selected() < fm.listRows.Length()-1 {
+		fm.listRows.Select(fm.listRows.Selected() + 1)
+	} else {
+		fm.listRows.Select(0)
+	}
 }
