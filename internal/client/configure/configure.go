@@ -17,6 +17,7 @@ import (
 type Config struct {
 	Address    string `env:"ADDRESS" json:"address,omitempty"`         // адрес сервера grpc
 	Secret     string `env:"SECRET" json:"secret,omitempty"`           // ключ шифрования
+	CAFile     string `env:"CA_FILE" json:"ca_file,omitempty"`         // путь до файла CA
 	StaticPath string `env:"STATIC_PATH" json:"static_path,omitempty"` // путь до рабочей дирректории
 }
 
@@ -33,6 +34,7 @@ func (cfg *Config) readFlags() error {
 
 	address := flag.String("g", "127.0.0.1:8080", "Сетевой адрес grpc host:port")
 	secret := flag.String("s", "test", "Ключ шифрования")
+	caFile := flag.String("c", "./ca.crt", "Путь до файла CA")
 	staticPath := flag.String("w", workDir, "Путь до рабочей дирректории ")
 	flag.Parse()
 
@@ -42,6 +44,10 @@ func (cfg *Config) readFlags() error {
 
 	if cfg.Secret == "" {
 		cfg.Secret = *secret
+	}
+
+	if cfg.CAFile == "" {
+		cfg.CAFile = *caFile
 	}
 
 	if cfg.StaticPath == "" {

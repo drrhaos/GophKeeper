@@ -16,6 +16,7 @@ import (
 	"gophkeeper/pkg/proto"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
@@ -30,7 +31,12 @@ type GRPCClient struct {
 
 // Connect устанавливает соединение с сервером.
 func Connect(cfg configure.Config, user string, password string) (*GRPCClient, error) {
-	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	tlsCreds, err := credentials.NewClientTLSFromFile(cfg.CAFile, "localhost")
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(tlsCreds))
 	if err != nil {
 		return nil, err
 	}

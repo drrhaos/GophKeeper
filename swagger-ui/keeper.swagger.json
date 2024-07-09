@@ -92,6 +92,51 @@
         ]
       }
     },
+    "/api/download": {
+      "get": {
+        "operationId": "GophKeeper_Download",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/gophkeeperFileDownResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of gophkeeperFileDownResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fileName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "GophKeeper"
+        ]
+      }
+    },
     "/api/edit": {
       "put": {
         "operationId": "GophKeeper_EditField",
@@ -213,6 +258,49 @@
             "schema": {
               "$ref": "#/definitions/gophkeeperRegisterRequest"
             }
+          }
+        ],
+        "tags": [
+          "GophKeeper"
+        ]
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "operationId": "GophKeeper_Upload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/gophkeeperFileUploadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fileName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "chunk",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
           }
         ],
         "tags": [

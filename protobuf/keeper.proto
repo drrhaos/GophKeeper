@@ -195,6 +195,16 @@ service GophKeeper {
             };
         };
     };
-    rpc Upload(stream FileUploadRequest) returns(FileUploadResponse);
-    rpc Download(FileDownRequest) returns(stream FileDownResponse);
+    rpc Upload(stream FileUploadRequest) returns(FileUploadResponse)
+    {
+        option (google.api.http) = {
+            post : "/api/upload"
+        };
+    };
+    rpc Download(FileDownRequest) returns(stream FileDownResponse)
+    {
+        option (google.api.http) = {
+            get: "/api/download"
+        };
+    };
 }

@@ -85,7 +85,7 @@ func (fm *FormLogin) signIn(_ *tui.Button) {
 	var err error
 	fm.Cli, err = grpcclient.Connect(fm.cfg, fm.loginEdit.Text(), fm.passwordEdit.Text())
 	if err != nil {
-		fm.labelInfo.SetText("Не вереное имя пользователя или пароль")
+		fm.labelInfo.SetText(fmt.Sprintf("Не удалось авторизоваться: %s", error.Error(err)))
 		return
 	}
 	fm.ui.Quit()

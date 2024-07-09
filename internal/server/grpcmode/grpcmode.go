@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -23,6 +22,7 @@ import (
 	"github.com/go-chi/jwtauth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -41,16 +41,21 @@ var (
 func Run(cfg configure.Config) {
 	pg.Migrations(cfg.DatabaseDsn)
 
+	tlsCreds, err := credentials.NewServerTLSFromFile(cfg.CertFile, cfg.KeyFile)
+	if err != nil {
+		logger.Log.Panic("Не удалось создать сертификаты", zap.Error(err))
+	}
+
 	storeKeeper := &store.StorageContext{}
 	storeKeeper.SetStorage(pg.NewDatabase(cfg.DatabaseDsn))
 
 	listen, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.Port))
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Panic("Не удалось открыть порт", zap.Error(err))
 	}
 
 	// создаём gRPC-сервер без зарегистрированной службы
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.Creds(tlsCreds))
 
 	// регистрируем сервис
 	metricsServer := GophKeeperServer{
@@ -61,7 +66,7 @@ func Run(cfg configure.Config) {
 
 	// получаем запрос gRPC
 	if err := s.Serve(listen); err != nil {
-		log.Fatal(err)
+		logger.Log.Panic("Не удалось запустить сервер", zap.Error(err))
 	}
 }
 

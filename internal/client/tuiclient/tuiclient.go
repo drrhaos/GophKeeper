@@ -247,7 +247,7 @@ func (fm *Form) saveField(_ *tui.Button) {
 		return
 	}
 
-	if fm.fileNameEdit.Text() != "" && err == nil {
+	if fm.fileNameEdit.Text() != "" {
 		fm.cli.Upload(context.Background(), filePath)
 	} else {
 		fm.statusBar.SetText("Не удалось загрузить файл")
