@@ -402,6 +402,10 @@ func (fm *Form) saveFile(_ *tui.Button) {
 	defer destFile.Close()
 
 	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		fm.statusBar.SetText("Не удалось записать файл")
+		return
+	}
 
 	_, nameFile := filepath.Split(srcFile.Name())
 	fm.fileNameEdit.SetText(nameFile)
