@@ -10,6 +10,8 @@
 cmd/server/server
 cmd/server/data
 cmd/client/client
+coverage.txt
+index.html
 
 # Test binary, built with `go test -c`
 *.test

@@ -398,7 +398,6 @@ func (fm *Form) saveFile(_ *tui.Button) {
 		fm.statusBar.SetText("Не удалось записать файл")
 		return
 	}
-
 	defer destFile.Close()
 
 	_, err = io.Copy(destFile, srcFile)
