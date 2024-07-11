@@ -18,10 +18,9 @@ import (
 
 // Form описывает структуру графического интерфейса.
 type Form struct {
-	ui         tui.UI
-	listRows   *tui.List
-	gridFields *tui.Grid
-	cfg        configure.Config
+	ui       tui.UI
+	listRows *tui.List
+	cfg      configure.Config
 
 	statusField    *tui.Label
 	nameEdit       *tui.TextEdit
