@@ -273,7 +273,10 @@ func (ms *GophKeeperServer) Upload(stream proto.GophKeeper_UploadServer) error {
 	for {
 		req, err := stream.Recv()
 		if file.FilePath == "" {
-			file.SetFile(req.GetFileName(), ms.cfg.WorkPath)
+			errSetFile := file.SetFile(req.GetFileName(), ms.cfg.WorkPath)
+			if errSetFile != nil {
+				return errSetFile
+			}
 		}
 		if err == io.EOF {
 			break

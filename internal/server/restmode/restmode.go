@@ -8,18 +8,23 @@ import (
 	"net/http"
 	"strings"
 
+	"gophkeeper/internal/logger"
 	"gophkeeper/internal/server/configure"
 
 	"gophkeeper/pkg/proto"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
 func serveSwagger(mux *http.ServeMux, cfg configure.Config) {
-	mime.AddExtensionType(".svg", "image/svg+xml")
+	err := mime.AddExtensionType(".svg", "image/svg+xml")
+	if err != nil {
+		logger.Log.Warn("Не удалось загрузить статические файлы", zap.Error(err))
+	}
 
 	fileServer := http.FileServer(http.Dir(cfg.StaticPath))
 	prefix := "/swagger-ui/"

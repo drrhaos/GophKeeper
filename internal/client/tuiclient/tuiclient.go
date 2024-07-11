@@ -248,9 +248,13 @@ func (fm *Form) saveField(_ *tui.Button) {
 	}
 
 	if fm.fileNameEdit.Text() != "" {
-		fm.cli.Upload(context.Background(), filePath)
+		err = fm.cli.Upload(context.Background(), filePath)
+		if err != nil {
+			fm.statusBar.SetText("Не удалось загрузить файл")
+			return
+		}
 	} else {
-		fm.statusBar.SetText("Не удалось загрузить файл")
+		fm.statusBar.SetText("Файл не выбран")
 		return
 	}
 

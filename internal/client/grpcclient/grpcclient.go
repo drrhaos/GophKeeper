@@ -212,7 +212,10 @@ func (client *GRPCClient) Download(ctx context.Context, uuid string, fileName st
 	for {
 		req, err := stream.Recv()
 		if file.FilePath == "" {
-			file.SetFile(uuid, client.cfg.StaticPath)
+			errSetFile := file.SetFile(uuid, client.cfg.StaticPath)
+			if errSetFile != nil {
+				return errSetFile
+			}
 		}
 		if err == io.EOF {
 			break
