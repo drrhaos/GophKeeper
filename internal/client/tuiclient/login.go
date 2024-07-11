@@ -12,8 +12,7 @@ import (
 
 // FormLogin описывает структуру графического интерфейсаc входа пользователя.
 type FormLogin struct {
-	ui   tui.UI
-	grid *tui.Grid
+	ui tui.UI
 
 	loginEdit    *tui.TextEdit
 	passwordEdit *tui.TextEdit

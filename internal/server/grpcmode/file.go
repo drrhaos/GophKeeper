@@ -1,7 +1,6 @@
 package grpcmode
 
 import (
-	"bytes"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,7 +9,6 @@ import (
 // File хранит параметры файла
 type File struct {
 	FilePath   string
-	buffer     *bytes.Buffer
 	OutputFile *os.File
 }
 
