@@ -3,6 +3,7 @@ package pg
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"time"
 
@@ -15,12 +16,16 @@ import (
 	// необходима для миграции
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
+
+//go:embed migrations
+var fs embed.FS
 
 // Database хранит пул коннектов.
 type Database struct {
@@ -47,18 +52,21 @@ func NewDatabase(uri string) *Database {
 }
 
 // Migrations миграция базы данных.
-func Migrations(cfg configure.Config) {
-	m, err := migrate.New(
-		cfg.SourceMigrations,
-		cfg.DatabaseDsn)
+func Migrations(cfg configure.Config) error {
+	source, _ := iofs.New(fs, "migrations")
+
+	m, err := migrate.NewWithSourceInstance("iofs", source, cfg.DatabaseDsn)
 	if err != nil {
-		logger.Log.Panic("Не удалось подключиться к базе данных", zap.Error(err))
+		logger.Log.Warn("Не удалось подключиться к базе данных", zap.Error(err))
+		return err
 	}
 	err = m.Up()
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		logger.Log.Panic("Не удалось выполнить миграцию", zap.Error(err))
+		logger.Log.Warn("Не удалось выполнить миграцию", zap.Error(err))
+		return err
 	}
 	logger.Log.Info("Миграции успешно применены")
+	return nil
 }
 
 func (db *Database) getUserID(ctx context.Context, user string) (idUser int, err error) {

@@ -13,15 +13,14 @@ import (
 
 // Config хранит текущую конфигурацию сервиса.
 type Config struct {
-	Port             string `env:"PORT" json:"address,omitempty"`                        // порт сервера grpc
-	PortRest         string `env:"PORT_REST" json:"address_rest,omitempty"`              // порт сервера rest
-	StaticPath       string `env:"STATIC_PATH" json:"static_path,omitempty"`             // путь до статических файлов
-	WorkPath         string `env:"WORK_PATH" json:"work_path,omitempty"`                 // путь до рабочей дирректории
-	CertFile         string `env:"CERT_FILE" json:"cert_file,omitempty"`                 // путь до сертификата
-	KeyFile          string `env:"KEY_FILE" json:"key_file,omitempty"`                   // путь до ключа
-	DatabaseDsn      string `env:"DATABASE_DSN" json:"database_dsn,omitempty"`           // DSN базы данных
-	SecretKey        string `env:"SECRET_KEY" json:"secret_key,omitempty"`               // ключ шифрования
-	SourceMigrations string `env:"SOURCE_MIGRATIONS" json:"source_migrations,omitempty"` // путь до файлов миграций
+	Port        string `env:"PORT" json:"address,omitempty"`              // порт сервера grpc
+	PortRest    string `env:"PORT_REST" json:"address_rest,omitempty"`    // порт сервера rest
+	StaticPath  string `env:"STATIC_PATH" json:"static_path,omitempty"`   // путь до статических файлов
+	WorkPath    string `env:"WORK_PATH" json:"work_path,omitempty"`       // путь до рабочей дирректории
+	CertFile    string `env:"CERT_FILE" json:"cert_file,omitempty"`       // путь до сертификата
+	KeyFile     string `env:"KEY_FILE" json:"key_file,omitempty"`         // путь до ключа
+	DatabaseDsn string `env:"DATABASE_DSN" json:"database_dsn,omitempty"` // DSN базы данных
+	SecretKey   string `env:"SECRET_KEY" json:"secret_key,omitempty"`     // ключ шифрования
 }
 
 func (cfg *Config) readFlags() {
@@ -33,7 +32,6 @@ func (cfg *Config) readFlags() {
 	keyFile := flag.String("k", "./certs/server.key", "Путь до файла ключа")
 	databaseDsn := flag.String("d", "",
 		"Сетевой адрес базя данных postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable")
-	sourceMigrations := flag.String("m", "file://db/migrations", "Путь до файлов миграций")
 	flag.Parse()
 
 	if cfg.Port == "" {
@@ -62,10 +60,6 @@ func (cfg *Config) readFlags() {
 
 	if cfg.DatabaseDsn == "" {
 		cfg.DatabaseDsn = *databaseDsn
-	}
-
-	if cfg.SourceMigrations == "" {
-		cfg.SourceMigrations = *sourceMigrations
 	}
 }
 
