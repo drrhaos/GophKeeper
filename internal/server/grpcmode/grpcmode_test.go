@@ -566,7 +566,10 @@ func TestGophKeeperServer_Download(t *testing.T) {
 	}
 	defer f.Close()
 	for i := 0; i < 1000; i++ {
-		f.Write([]byte("test "))
+		_, err := f.Write([]byte("test "))
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 	dirPath, nameFile := filepath.Split(fileTmp)
@@ -612,7 +615,10 @@ func TestGophKeeperServer_Download(t *testing.T) {
 	var fileSize uint32
 	fileSize = 0
 	defer func() {
-		file.Close()
+		err := file.Close()
+		if err != nil {
+			t.Error(err)
+		}
 	}()
 	for {
 		req, err := stream.Recv()
@@ -664,7 +670,10 @@ func TestGophKeeperServer_Upload(t *testing.T) {
 
 	go func() {
 		listen, _ := net.Listen("tcp", ":50051")
-		server.Serve(listen)
+		err := server.Serve(listen)
+		if err != nil {
+			t.Error(err)
+		}
 	}()
 	defer server.Stop()
 

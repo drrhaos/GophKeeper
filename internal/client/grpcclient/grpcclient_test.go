@@ -76,7 +76,10 @@ func TestGRPCClient_GetListFields(t *testing.T) {
 
 	go func() {
 		listen, _ := net.Listen("tcp", ":50051")
-		server.Serve(listen)
+		err := server.Serve(listen)
+		if err != nil {
+			t.Error(err)
+		}
 	}()
 	defer server.Stop()
 
@@ -107,7 +110,10 @@ func TestGRPCClient_Upload(t *testing.T) {
 	}
 	defer f.Close()
 	for i := 0; i < 1000; i++ {
-		f.Write([]byte("test "))
+		_, err = f.Write([]byte("test "))
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 	dirPath, _ := filepath.Split(fileTmp)
@@ -125,7 +131,10 @@ func TestGRPCClient_Upload(t *testing.T) {
 
 	go func() {
 		listen, _ := net.Listen("tcp", ":50051")
-		server.Serve(listen)
+		err = server.Serve(listen)
+		if err != nil {
+			t.Error(err)
+		}
 	}()
 	defer server.Stop()
 
@@ -156,7 +165,10 @@ func TestGRPCClient_Download(t *testing.T) {
 	}
 	defer f.Close()
 	for i := 0; i < 1000; i++ {
-		f.Write([]byte("test "))
+		_, err := f.Write([]byte("test "))
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 	dirPath, _ := filepath.Split(fileTmp)
@@ -174,7 +186,10 @@ func TestGRPCClient_Download(t *testing.T) {
 
 	go func() {
 		listen, _ := net.Listen("tcp", ":50051")
-		server.Serve(listen)
+		err = server.Serve(listen)
+		if err != nil {
+			t.Error(err)
+		}
 	}()
 	defer server.Stop()
 

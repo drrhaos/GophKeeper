@@ -39,7 +39,10 @@ var (
 
 // Run запускает сервер
 func Run(cfg configure.Config) {
-	pg.Migrations(cfg)
+	err := pg.Migrations(cfg)
+	if err != nil {
+		logger.Log.Panic("Не выполнить миграции", zap.Error(err))
+	}
 
 	tlsCreds, err := credentials.NewServerTLSFromFile(cfg.CertFile, cfg.KeyFile)
 	if err != nil {

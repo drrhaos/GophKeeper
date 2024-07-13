@@ -67,7 +67,11 @@ func TestFile_Write(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := NewFile()
-			f.SetFile(tt.args.fileName, tt.args.path)
+			err := f.SetFile(tt.args.fileName, tt.args.path)
+			if err != nil {
+				t.Error(err)
+			}
+
 			if err := f.Write(tt.args.chunk); (err != nil) != tt.wantErr {
 				t.Errorf("File.Write() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -101,7 +105,10 @@ func TestFile_Close(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := NewFile()
-			f.SetFile(tt.args.fileName, tt.args.path)
+			err := f.SetFile(tt.args.fileName, tt.args.path)
+			if err != nil {
+				t.Error(err)
+			}
 			if err := f.Close(); (err != nil) != tt.wantErr {
 				t.Errorf("File.Close() error = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -20,7 +20,10 @@ func TestRequestLogger(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			Initialize("info")
+			err := Initialize("info")
+			if err != nil {
+				t.Error(err)
+			}
 
 			assert.Equal(t, test.want, true)
 		})
