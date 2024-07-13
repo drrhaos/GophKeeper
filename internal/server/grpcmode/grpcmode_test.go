@@ -3,6 +3,10 @@ package grpcmode
 
 import (
 	"context"
+	"io"
+	"net"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -12,6 +16,8 @@ import (
 	"gophkeeper/pkg/proto"
 
 	"github.com/stretchr/testify/mock"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -549,37 +555,158 @@ func TestGophKeeperServer_checkToken(t *testing.T) {
 	}
 }
 
-// func TestGophKeeperServer_Upload(t *testing.T) {
-// 	storeKeeper := &store.StorageContext{}
-// 	mockStore := new(mocks.MockStore)
-// 	mockStore.On("UserLogin", mock.Anything, "test", "test").Return(nil)
-// 	storeKeeper.SetStorage(mockStore)
+func TestGophKeeperServer_Download(t *testing.T) {
+	fileTmp := "/tmp/6666"
+	defer os.Remove(fileTmp)
+	fileTmpOut := "/tmp/66667"
+	defer os.Remove(fileTmpOut)
+	f, err := os.Create(fileTmp)
+	if err != nil {
+		t.Error(err)
+	}
+	defer f.Close()
+	for i := 0; i < 1000; i++ {
+		f.Write([]byte("test "))
+	}
 
-// 	type fields struct {
-// 		UnimplementedGophKeeperServer proto.UnimplementedGophKeeperServer
-// 		cfg                           configure.Config
-// 	}
-// 	type args struct {
-// 		stream proto.GophKeeper_UploadServer
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		fields  fields
-// 		args    args
-// 		wantErr bool
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			ms := &GophKeeperServer{
-// 				UnimplementedGophKeeperServer: tt.fields.UnimplementedGophKeeperServer,
-// 				storage:                       storeKeeper,
-// 				cfg:                           tt.fields.cfg,
-// 			}
-// 			if err := ms.Upload(tt.args.stream); (err != nil) != tt.wantErr {
-// 				t.Errorf("GophKeeperServer.Upload() error = %v, wantErr %v", err, tt.wantErr)
-// 			}
-// 		})
-// 	}
-// }
+	dirPath, nameFile := filepath.Split(fileTmp)
+
+	storeKeeper := &store.StorageContext{}
+	mockStore := new(mocks.MockStore)
+	mockStore.On("UserLogin", mock.Anything, "test", "test").Return(nil)
+	storeKeeper.SetStorage(mockStore)
+
+	server := grpc.NewServer()
+	proto.RegisterGophKeeperServer(server, &GophKeeperServer{
+		storage: storeKeeper,
+		cfg:     configure.Config{WorkPath: dirPath},
+	})
+
+	go func() {
+		listen, _ := net.Listen("tcp", ":50051")
+		server.Serve(listen)
+	}()
+	defer server.Stop()
+
+	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("failed to connect: %v", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewGophKeeperClient(conn)
+
+	resp, _ := client.Login(context.Background(), &proto.LoginRequest{
+		Login:    "test",
+		Password: "test",
+	})
+	md := metadata.New(map[string]string{"Authorization": resp.Token})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	stream, err := client.Download(ctx, &proto.FileDownRequest{Uuid: nameFile, FileName: "test"})
+	if err != nil {
+		t.Error(err)
+	}
+
+	file := NewFile()
+	var fileSize uint32
+	fileSize = 0
+	defer func() {
+		file.Close()
+	}()
+	for {
+		req, err := stream.Recv()
+		if file.FilePath == "" {
+			errSetFile := file.SetFile(nameFile, fileTmpOut)
+			if errSetFile != nil {
+				t.Error(err)
+			}
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Error(err)
+		}
+		chunk := req.GetChunk()
+		fileSize += uint32(len(chunk))
+		if err := file.Write(chunk); err != nil {
+			t.Error(err)
+		}
+	}
+	_, err = os.Stat(fileTmpOut)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestGophKeeperServer_Upload(t *testing.T) {
+	fileTmp := "/tmp/6666"
+	defer os.Remove(fileTmp)
+	f, err := os.Create(fileTmp)
+	if err != nil {
+		t.Error(err)
+	}
+	defer f.Close()
+
+	dirPath, nameFile := filepath.Split(fileTmp)
+
+	storeKeeper := &store.StorageContext{}
+	mockStore := new(mocks.MockStore)
+	mockStore.On("UserLogin", mock.Anything, "test", "test").Return(nil)
+	storeKeeper.SetStorage(mockStore)
+
+	server := grpc.NewServer()
+	proto.RegisterGophKeeperServer(server, &GophKeeperServer{
+		storage: storeKeeper,
+		cfg:     configure.Config{WorkPath: dirPath},
+	})
+
+	go func() {
+		listen, _ := net.Listen("tcp", ":50051")
+		server.Serve(listen)
+	}()
+	defer server.Stop()
+
+	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("failed to connect: %v", err)
+	}
+	defer conn.Close()
+
+	client := proto.NewGophKeeperClient(conn)
+
+	fileData := []byte("test test test")
+
+	resp, _ := client.Login(context.Background(), &proto.LoginRequest{
+		Login:    "test",
+		Password: "test",
+	})
+	md := metadata.New(map[string]string{"Authorization": resp.Token})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	stream, err := client.Upload(ctx)
+	if err != nil {
+		t.Errorf("UploadFile failed: %v", err)
+	}
+	chunkSize := 10
+	for i := 0; i < len(fileData); i += chunkSize {
+		end := i + chunkSize
+		if end > len(fileData) {
+			end = len(fileData)
+		}
+		chunk := fileData[i:end]
+		err = stream.Send(&proto.FileUploadRequest{FileName: filepath.Base(nameFile), Chunk: chunk})
+		if err != nil {
+			t.Errorf("Send failed: %v", err)
+		}
+	}
+
+	respUp, err := stream.CloseAndRecv()
+	if err != nil {
+		t.Errorf("CloseAndRecv failed: %v", err)
+	}
+	if respUp.FileName != nameFile {
+		t.Errorf("CloseAndRecv failed: %s != %s", respUp.FileName, nameFile)
+	}
+}

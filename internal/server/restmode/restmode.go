@@ -20,6 +20,10 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+var allowedHeaders = map[string]struct{}{
+	"Authorization": {},
+}
+
 func serveSwagger(mux *http.ServeMux, cfg configure.Config) {
 	err := mime.AddExtensionType(".svg", "image/svg+xml")
 	if err != nil {
@@ -29,10 +33,6 @@ func serveSwagger(mux *http.ServeMux, cfg configure.Config) {
 	fileServer := http.FileServer(http.Dir(cfg.StaticPath))
 	prefix := "/swagger-ui/"
 	mux.Handle(prefix, http.StripPrefix(prefix, fileServer))
-}
-
-var allowedHeaders = map[string]struct{}{
-	"Authorization": {},
 }
 
 func isHeaderAllowed(s string) (string, bool) {

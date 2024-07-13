@@ -4,11 +4,12 @@ package pg
 import (
 	"context"
 	"fmt"
-	"gophkeeper/internal/server/configure"
-	"gophkeeper/pkg/proto"
 	"reflect"
 	"testing"
 	"time"
+
+	"gophkeeper/internal/server/configure"
+	"gophkeeper/pkg/proto"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -95,6 +96,14 @@ func TestDatabase_ListFields(t *testing.T) {
 			},
 			wantOk: true,
 		},
+		{
+			name: "Negative test #1",
+			args: args{
+				ctx:  context.Background(),
+				user: "test2",
+			},
+			wantOk: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -172,6 +181,15 @@ func TestDatabase_UserRegister(t *testing.T) {
 				password: "test",
 			},
 			wantErr: false,
+		},
+		{
+			name: "Negative test #1",
+			args: args{
+				ctx:      context.Background(),
+				login:    "test",
+				password: "test",
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
