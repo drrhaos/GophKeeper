@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -31,14 +32,20 @@ type GRPCClient struct {
 
 // Connect устанавливает соединение с сервером.
 func Connect(cfg configure.Config, user string, password string) (*GRPCClient, error) {
-	tlsCreds, err := credentials.NewClientTLSFromFile(cfg.CAFile, "localhost")
-	if err != nil {
-		return nil, err
-	}
+	var conn *grpc.ClientConn
+	var err error
+	if cfg.CAFile != "" {
+		tlsCreds, err := credentials.NewClientTLSFromFile(cfg.CAFile, "localhost")
+		if err != nil {
+			return nil, err
+		}
 
-	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(tlsCreds))
-	if err != nil {
-		return nil, err
+		conn, err = grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(tlsCreds))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		conn, err = grpc.NewClient(cfg.Address, grpc.WithInsecure())
 	}
 
 	client := proto.NewGophKeeperClient(conn)
@@ -85,7 +92,7 @@ func Reg(cfg configure.Config, user string, password string) (*GRPCClient, error
 	return &GRPCClient{client: client, token: token}, nil
 }
 
-// GetListFields получает с сервера список запсисей.
+// GetListFields получает с сервера список записей.
 func (client *GRPCClient) GetListFields() *proto.ListFielsdKeepResponse {
 	md := metadata.New(map[string]string{"Authorization": client.token})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
@@ -99,6 +106,7 @@ func (client *GRPCClient) GetListFields() *proto.ListFielsdKeepResponse {
 	}
 
 	for key, ddd := range respEnc.Data {
+		fmt.Println(key)
 		respDec.GetData()[key] = crypt.DecField(ddd, client.secret)
 	}
 

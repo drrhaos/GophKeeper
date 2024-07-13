@@ -84,8 +84,8 @@ func TestGophKeeperServer_Register(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &GophKeeperServer{
 				UnimplementedGophKeeperServer: tt.fields.UnimplementedGophKeeperServer,
-				storage:                       storeKeeper,
-				cfg:                           tt.fields.cfg,
+				Storage:                       storeKeeper,
+				Cfg:                           tt.fields.cfg,
 			}
 			got, err := ms.Register(tt.args.ctx, tt.args.in)
 			if (err != nil) != tt.wantErr {
@@ -158,8 +158,8 @@ func TestGophKeeperServer_Login(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &GophKeeperServer{
 				UnimplementedGophKeeperServer: tt.fields.UnimplementedGophKeeperServer,
-				storage:                       storeKeeper,
-				cfg:                           tt.fields.cfg,
+				Storage:                       storeKeeper,
+				Cfg:                           tt.fields.cfg,
 			}
 			got, err := ms.Login(tt.args.ctx, tt.args.in)
 			if (err != nil) != tt.wantErr {
@@ -229,8 +229,8 @@ func TestGophKeeperServer_AddField(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &GophKeeperServer{
 				UnimplementedGophKeeperServer: tt.fields.UnimplementedGophKeeperServer,
-				storage:                       storeKeeper,
-				cfg:                           tt.fields.cfg,
+				Storage:                       storeKeeper,
+				Cfg:                           tt.fields.cfg,
 			}
 
 			resp, errLogin := ms.Login(tt.args.ctx, &proto.LoginRequest{Login: tt.user, Password: tt.password})
@@ -309,8 +309,8 @@ func TestGophKeeperServer_EditField(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &GophKeeperServer{
 				UnimplementedGophKeeperServer: tt.fields.UnimplementedGophKeeperServer,
-				storage:                       storeKeeper,
-				cfg:                           tt.fields.cfg,
+				Storage:                       storeKeeper,
+				Cfg:                           tt.fields.cfg,
 			}
 
 			resp, errLogin := ms.Login(tt.args.ctx, &proto.LoginRequest{Login: tt.user, Password: tt.password})
@@ -379,8 +379,8 @@ func TestGophKeeperServer_DelField(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &GophKeeperServer{
 				UnimplementedGophKeeperServer: tt.fields.UnimplementedGophKeeperServer,
-				storage:                       storeKeeper,
-				cfg:                           tt.fields.cfg,
+				Storage:                       storeKeeper,
+				Cfg:                           tt.fields.cfg,
 			}
 			resp, errLogin := ms.Login(tt.args.ctx, &proto.LoginRequest{Login: tt.user, Password: tt.password})
 			if errLogin != nil {
@@ -455,8 +455,8 @@ func TestGophKeeperServer_ListFields(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &GophKeeperServer{
 				UnimplementedGophKeeperServer: tt.fields.UnimplementedGophKeeperServer,
-				storage:                       storeKeeper,
-				cfg:                           tt.fields.cfg,
+				Storage:                       storeKeeper,
+				Cfg:                           tt.fields.cfg,
 			}
 
 			resp, errLogin := ms.Login(tt.args.ctx, &proto.LoginRequest{Login: tt.user, Password: tt.password})
@@ -534,8 +534,8 @@ func TestGophKeeperServer_checkToken(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &GophKeeperServer{
 				UnimplementedGophKeeperServer: tt.fields.UnimplementedGophKeeperServer,
-				storage:                       storeKeeper,
-				cfg:                           tt.fields.cfg,
+				Storage:                       storeKeeper,
+				Cfg:                           tt.fields.cfg,
 			}
 
 			resp, _ := ms.Login(tt.args.ctx, &proto.LoginRequest{Login: tt.user, Password: tt.password})
@@ -578,8 +578,8 @@ func TestGophKeeperServer_Download(t *testing.T) {
 
 	server := grpc.NewServer()
 	proto.RegisterGophKeeperServer(server, &GophKeeperServer{
-		storage: storeKeeper,
-		cfg:     configure.Config{WorkPath: dirPath},
+		Storage: storeKeeper,
+		Cfg:     configure.Config{WorkPath: dirPath},
 	})
 
 	go func() {
@@ -658,8 +658,8 @@ func TestGophKeeperServer_Upload(t *testing.T) {
 
 	server := grpc.NewServer()
 	proto.RegisterGophKeeperServer(server, &GophKeeperServer{
-		storage: storeKeeper,
-		cfg:     configure.Config{WorkPath: dirPath},
+		Storage: storeKeeper,
+		Cfg:     configure.Config{WorkPath: dirPath},
 	})
 
 	go func() {

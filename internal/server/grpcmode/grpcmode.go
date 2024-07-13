@@ -59,8 +59,8 @@ func Run(cfg configure.Config) {
 
 	// регистрируем сервис
 	metricsServer := GophKeeperServer{
-		storage: storeKeeper,
-		cfg:     cfg,
+		Storage: storeKeeper,
+		Cfg:     cfg,
 	}
 	proto.RegisterGophKeeperServer(s, &metricsServer)
 
@@ -74,8 +74,8 @@ func Run(cfg configure.Config) {
 type GophKeeperServer struct {
 	proto.UnimplementedGophKeeperServer
 
-	storage *store.StorageContext
-	cfg     configure.Config
+	Storage *store.StorageContext
+	Cfg     configure.Config
 }
 
 // Register регистрирует нового пользователя.
@@ -89,7 +89,7 @@ func (ms *GophKeeperServer) Register(ctx context.Context, in *proto.RegisterRequ
 		return &response, nil
 	}
 
-	err := ms.storage.UserRegister(ctx, in.Login, in.Password)
+	err := ms.Storage.UserRegister(ctx, in.Login, in.Password)
 	if errors.Is(err, store.ErrLoginDuplicate) {
 		return &response, err
 	} else if err != nil && !errors.Is(err, store.ErrLoginDuplicate) {
@@ -104,7 +104,7 @@ func (ms *GophKeeperServer) Register(ctx context.Context, in *proto.RegisterRequ
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	response.Token, err = token.SignedString([]byte(ms.cfg.SecretKey))
+	response.Token, err = token.SignedString([]byte(ms.Cfg.SecretKey))
 	if err != nil {
 		logger.Log.Warn("Ошибка создания токена:", zap.Error(err))
 		return &response, err
@@ -128,7 +128,7 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *proto.LoginRequest) (
 		return &response, nil
 	}
 
-	err := ms.storage.UserLogin(ctx, in.Login, in.Password)
+	err := ms.Storage.UserLogin(ctx, in.Login, in.Password)
 
 	if errors.Is(err, store.ErrAuthentication) {
 		return &response, err
@@ -144,7 +144,7 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *proto.LoginRequest) (
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	response.Token, err = token.SignedString([]byte(ms.cfg.SecretKey))
+	response.Token, err = token.SignedString([]byte(ms.Cfg.SecretKey))
 	if err != nil {
 		logger.Log.Warn("Ошибка создания токена:", zap.Error(err))
 		return &response, err
@@ -164,7 +164,7 @@ func (ms *GophKeeperServer) AddField(ctx context.Context, in *proto.AddFieldKeep
 	}
 
 	var ok bool
-	response.Uuid, response.Data, ok = ms.storage.AddField(ctx, claims.Username, in.GetData())
+	response.Uuid, response.Data, ok = ms.Storage.AddField(ctx, claims.Username, in.GetData())
 	if !ok {
 		return &response, ErrNotValidData
 	}
@@ -182,7 +182,7 @@ func (ms *GophKeeperServer) EditField(ctx context.Context, in *proto.EditFieldKe
 		return &response, err
 	}
 	var ok bool
-	response.Data, ok = ms.storage.EditField(ctx, claims.Username, in.GetUuid(), in.GetData())
+	response.Data, ok = ms.Storage.EditField(ctx, claims.Username, in.GetUuid(), in.GetData())
 	if !ok {
 		return &response, ErrNotValidData
 	}
@@ -199,7 +199,7 @@ func (ms *GophKeeperServer) DelField(ctx context.Context, in *proto.DeleteFieldK
 		return &response, err
 	}
 
-	uuid, ok := ms.storage.DelField(ctx, claims.Username, in.GetUuid())
+	uuid, ok := ms.Storage.DelField(ctx, claims.Username, in.GetUuid())
 	if !ok {
 		return &response, ErrNotValidData
 	}
@@ -217,7 +217,7 @@ func (ms *GophKeeperServer) ListFields(ctx context.Context, _ *proto.ListFieldsK
 		return response, err
 	}
 	var ok bool
-	response, ok = ms.storage.ListFields(ctx, claims.Username)
+	response, ok = ms.Storage.ListFields(ctx, claims.Username)
 	if !ok {
 		return response, ErrNotValidData
 	}
@@ -243,7 +243,7 @@ func (ms *GophKeeperServer) checkToken(ctx context.Context) (*UserClaims, error)
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
-			return []byte(ms.cfg.SecretKey), nil
+			return []byte(ms.Cfg.SecretKey), nil
 		})
 
 	if err != nil || !parsedToken.Valid {
@@ -271,7 +271,7 @@ func (ms *GophKeeperServer) Upload(stream proto.GophKeeper_UploadServer) error {
 	for {
 		req, err := stream.Recv()
 		if file.FilePath == "" {
-			errSetFile := file.SetFile(req.GetFileName(), ms.cfg.WorkPath)
+			errSetFile := file.SetFile(req.GetFileName(), ms.Cfg.WorkPath)
 			if errSetFile != nil {
 				return errSetFile
 			}
@@ -303,7 +303,7 @@ func (ms *GophKeeperServer) Download(req *proto.FileDownRequest, stream proto.Go
 
 	fileName := req.GetFileName()
 	uuid := req.GetUuid()
-	path := filepath.Join(ms.cfg.WorkPath, uuid)
+	path := filepath.Join(ms.Cfg.WorkPath, uuid)
 
 	fileInfo, err := os.Stat(path)
 	if err != nil {
