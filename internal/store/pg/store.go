@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"gophkeeper/internal/logger"
+	"gophkeeper/internal/server/configure"
 	"gophkeeper/internal/store"
 	"gophkeeper/pkg/proto"
 
 	"github.com/golang-migrate/migrate/v4"
+	// необходима для миграции
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
@@ -19,8 +21,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
-
-const sourceMigrations = "file://db/migrations"
 
 // Database хранит пул коннектов.
 type Database struct {
@@ -47,10 +47,10 @@ func NewDatabase(uri string) *Database {
 }
 
 // Migrations миграция базы данных.
-func Migrations(uri string) {
+func Migrations(cfg configure.Config) {
 	m, err := migrate.New(
-		sourceMigrations,
-		uri)
+		cfg.SourceMigrations,
+		cfg.DatabaseDsn)
 	if err != nil {
 		logger.Log.Panic("Не удалось подключиться к базе данных", zap.Error(err))
 	}

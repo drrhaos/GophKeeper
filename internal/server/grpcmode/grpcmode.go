@@ -39,7 +39,7 @@ var (
 
 // Run запускает сервер
 func Run(cfg configure.Config) {
-	pg.Migrations(cfg.DatabaseDsn)
+	pg.Migrations(cfg)
 
 	tlsCreds, err := credentials.NewServerTLSFromFile(cfg.CertFile, cfg.KeyFile)
 	if err != nil {
@@ -158,7 +158,6 @@ func (ms *GophKeeperServer) Login(ctx context.Context, in *proto.LoginRequest) (
 // AddField добавдяет запись в хранилище.
 func (ms *GophKeeperServer) AddField(ctx context.Context, in *proto.AddFieldKeepRequest) (*proto.AddFieldKeepResponse, error) {
 	var response proto.AddFieldKeepResponse
-
 	claims, err := ms.checkToken(ctx)
 	if err != nil {
 		return &response, err
@@ -230,7 +229,6 @@ func (ms *GophKeeperServer) ListFields(ctx context.Context, _ *proto.ListFieldsK
 
 func (ms *GophKeeperServer) checkToken(ctx context.Context) (*UserClaims, error) {
 	var token string
-
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		values := md.Get("Authorization")
