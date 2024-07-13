@@ -74,3 +74,37 @@ func TestFile_Write(t *testing.T) {
 		})
 	}
 }
+
+func TestFile_Close(t *testing.T) {
+	fileTmp := "/tmp/agent.json"
+	defer os.Remove(fileTmp)
+	dirPath, nameFile := filepath.Split(fileTmp)
+
+	type args struct {
+		fileName string
+		path     string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "Positive test #1",
+			args: args{
+				fileName: nameFile,
+				path:     dirPath,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := NewFile()
+			f.SetFile(tt.args.fileName, tt.args.path)
+			if err := f.Close(); (err != nil) != tt.wantErr {
+				t.Errorf("File.Close() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
