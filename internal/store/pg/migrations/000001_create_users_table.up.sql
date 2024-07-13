@@ -10,9 +10,6 @@ CREATE TABLE IF NOT EXISTS public.users
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.users
-    OWNER to postgres;
-
 
 CREATE TABLE IF NOT EXISTS public.store
 (
@@ -38,5 +35,3 @@ CREATE TABLE IF NOT EXISTS public.store
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.store
-    OWNER to postgres;

@@ -39,12 +39,12 @@ func NewDatabase(uri string) *Database {
 
 	config, err := pgxpool.ParseConfig(uri)
 	if err != nil {
-		logger.Log.Panic("Ошибка при парсинге конфигурации:", zap.Error(err))
+		logger.Log.Warn("Ошибка при парсинге конфигурации:", zap.Error(err))
 		return nil
 	}
 	conn, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		logger.Log.Panic("Не удалось подключиться к базе данных")
+		logger.Log.Warn("Не удалось подключиться к базе данных")
 		return nil
 	}
 	db := &Database{Conn: conn}
